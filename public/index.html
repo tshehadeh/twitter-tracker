@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Twitter Following Tracker</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="app">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <h1>Tracker</h1>
+            </div>
+            
+            <div class="sidebar-section">
+                <h2>Sessions</h2>
+                <div id="sessions-list" class="sessions-list">
+                    <!-- Sessions populated by JS -->
+                </div>
+                <button id="new-session-btn" class="new-session-btn">+ New Session</button>
+            </div>
+            
+            <div class="sidebar-section">
+                <h2>New Follows</h2>
+                <button id="new-follows-btn" class="new-follows-btn">
+                    <span class="new-follows-icon">🔔</span>
+                    Review New Follows
+                    <span id="count-new-follows" class="category-count highlight">0</span>
+                </button>
+            </div>
+            
+            <div class="sidebar-section">
+                <h2>Categories</h2>
+                <nav class="category-nav">
+                    <button class="category-btn" data-category="outbound">
+                        <span class="category-dot outbound"></span>
+                        Outbound
+                        <span id="count-outbound" class="category-count">0</span>
+                    </button>
+                    <button class="category-btn" data-category="track">
+                        <span class="category-dot track"></span>
+                        Track
+                        <span id="count-track" class="category-count">0</span>
+                    </button>
+                    <button class="category-btn" data-category="pass">
+                        <span class="category-dot pass"></span>
+                        Pass
+                        <span id="count-pass" class="category-count">0</span>
+                    </button>
+                </nav>
+            </div>
+        </aside>
+        
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Welcome / New Session View -->
+            <div id="welcome-view" class="view active">
+                <div class="welcome-container">
+                    <h2>Start a New Session</h2>
+                    <p>Paste a Twitter/X profile link to get started</p>
+                    <div class="input-container">
+                        <input 
+                            type="text" 
+                            id="url-input" 
+                            placeholder="https://x.com/username or @username"
+                            autocomplete="off"
+                        >
+                        <button id="start-btn">Start</button>
+                    </div>
+                    <div id="input-error" class="error-message"></div>
+                </div>
+            </div>
+            
+            <!-- Review View -->
+            <div id="review-view" class="view">
+                <!-- Progress Header -->
+                <div class="progress-header">
+                    <div class="progress-info">
+                        <span id="review-username">@username</span>
+                        <span class="progress-text">
+                            <span id="remaining-count">0</span> remaining
+                            <span class="progress-divider">|</span>
+                            <span id="reviewed-count">0</span> reviewed this session
+                            <span id="pre-filtered-text"></span>
+                        </span>
+                    </div>
+                    <div id="scrape-status" class="scrape-status"></div>
+                </div>
+                
+                <!-- User Card Container -->
+                <div class="card-container">
+                    <div id="user-card" class="user-card">
+                        <div class="card-header">
+                            <img id="card-avatar" class="card-avatar" src="" alt="">
+                            <div class="card-names">
+                                <span id="card-display-name" class="card-display-name"></span>
+                                <span id="card-username" class="card-username"></span>
+                            </div>
+                            <span id="card-verified" class="verified-badge" style="display: none;">✓</span>
+                        </div>
+                        <p id="card-bio" class="card-bio"></p>
+                        <div class="card-stats">
+                            <div class="stat">
+                                <span class="stat-value" id="card-followers">0</span>
+                                <span class="stat-label">Followers</span>
+                            </div>
+                            <div class="stat">
+                                <span class="stat-value" id="card-following">0</span>
+                                <span class="stat-label">Following</span>
+                            </div>
+                        </div>
+                        <a id="card-link" class="card-link" href="#" target="_blank">View Profile</a>
+                    </div>
+                    
+                    <div id="empty-card" class="empty-card" style="display: none;">
+                        <p>All users have been reviewed!</p>
+                        <button id="back-to-sessions" class="secondary-btn">Back to Sessions</button>
+                    </div>
+                    
+                    <div id="loading-card" class="loading-card" style="display: none;">
+                        <div class="spinner"></div>
+                        <p>Loading...</p>
+                    </div>
+                </div>
+                
+                <!-- Action Buttons -->
+                <div class="action-buttons">
+                    <button id="btn-outbound" class="action-btn outbound">Outbound</button>
+                    <button id="btn-track" class="action-btn track">Track</button>
+                    <button id="btn-pass" class="action-btn pass">Pass</button>
+                </div>
+            </div>
+            
+            <!-- Category List View -->
+            <div id="category-view" class="view">
+                <div class="category-header">
+                    <button id="back-btn" class="back-btn">&larr; Back</button>
+                    <h2 id="category-title">Category</h2>
+                    <span id="category-total" class="category-total">0 users</span>
+                </div>
+                <div id="category-list" class="category-list">
+                    <!-- Users list populated by JS -->
+                </div>
+            </div>
+            
+            <!-- New Follows Review View -->
+            <div id="new-follows-view" class="view">
+                <!-- Progress Header -->
+                <div class="progress-header">
+                    <div class="progress-info">
+                        <span class="view-title">New Follows</span>
+                        <span class="progress-text">
+                            <span id="nf-unreviewed-count">0</span> to review
+                            <span class="progress-divider">|</span>
+                            <span id="nf-total-count">0</span> total detected
+                        </span>
+                    </div>
+                    <button id="nf-back-btn" class="back-btn">&larr; Back</button>
+                </div>
+                
+                <!-- New Follow Card Container -->
+                <div class="card-container">
+                    <div id="nf-card" class="user-card new-follow-card">
+                        <div class="followed-by-header">
+                            <span class="followed-by-text">
+                                <strong id="nf-core-node">@username</strong> started following
+                            </span>
+                        </div>
+                        <div class="card-header">
+                            <img id="nf-avatar" class="card-avatar" src="" alt="">
+                            <div class="card-names">
+                                <span id="nf-display-name" class="card-display-name"></span>
+                                <span id="nf-username" class="card-username"></span>
+                            </div>
+                            <span id="nf-verified" class="verified-badge" style="display: none;">✓</span>
+                        </div>
+                        <p id="nf-bio" class="card-bio"></p>
+                        <div class="card-stats">
+                            <div class="stat">
+                                <span class="stat-value" id="nf-followers">0</span>
+                                <span class="stat-label">Followers</span>
+                            </div>
+                            <div class="stat">
+                                <span class="stat-value" id="nf-following">0</span>
+                                <span class="stat-label">Following</span>
+                            </div>
+                        </div>
+                        <a id="nf-link" class="card-link" href="#" target="_blank">View Profile</a>
+                    </div>
+                    
+                    <div id="nf-empty-card" class="empty-card" style="display: none;">
+                        <p>All new follows have been reviewed!</p>
+                        <button id="nf-back-to-home" class="secondary-btn">Back to Home</button>
+                    </div>
+                    
+                    <div id="nf-loading-card" class="loading-card" style="display: none;">
+                        <div class="spinner"></div>
+                        <p>Loading...</p>
+                    </div>
+                </div>
+                
+                <!-- Action Buttons -->
+                <div class="action-buttons">
+                    <button id="nf-btn-outbound" class="action-btn outbound">Outbound</button>
+                    <button id="nf-btn-track" class="action-btn track">Track</button>
+                    <button id="nf-btn-pass" class="action-btn pass">Pass</button>
+                </div>
+            </div>
+        </main>
+    </div>
+    
+    <script src="app.js"></script>
+</body>
+</html>
