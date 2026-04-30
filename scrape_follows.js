@@ -189,14 +189,16 @@ async function main() {
 Nightly Follow Scraper
 
 Usage:
-  node scrape_follows.js              # Run full nightly scrape
-  node scrape_follows.js --test       # Test with first 3 accounts only
-  node scrape_follows.js --init       # Initialize core nodes in database only
+  node scrape_follows.js                    # Run full nightly scrape
+  node scrape_follows.js --test             # Test with first 3 accounts only
+  node scrape_follows.js --user <username>  # Scrape a specific user
+  node scrape_follows.js --init             # Initialize core nodes in database only
 
 Options:
-  --test    Run a test scrape with only first 3 accounts
-  --init    Load core nodes into database without scraping
-  --help    Show this help message
+  --test           Run a test scrape with only first 3 accounts
+  --user <name>    Scrape a specific user by username (without @)
+  --init           Load core nodes into database without scraping
+  --help           Show this help message
 `);
         process.exit(0);
     }
@@ -206,6 +208,40 @@ Options:
         const coreNodes = loadCoreNodesFromFile();
         db.loadCoreNodesFromJson(coreNodes);
         log(`Loaded ${coreNodes.length} core nodes into database`);
+        process.exit(0);
+    }
+    
+    // Handle --user <username> flag
+    const userIndex = args.indexOf('--user');
+    if (userIndex !== -1) {
+        const username = args[userIndex + 1];
+        if (!username) {
+            console.error('Error: --user requires a username argument');
+            process.exit(1);
+        }
+        
+        log(`Scraping single user: @${username}`);
+        
+        // First, look up the user to get their info
+        const userInfo = await getUserByUsername(username);
+        if (!userInfo) {
+            console.error(`Error: User @${username} not found`);
+            process.exit(1);
+        }
+        
+        const node = {
+            user_id: userInfo.rest_id,
+            username: userInfo.legacy.screen_name,
+            display_name: userInfo.legacy.name,
+            following_count: userInfo.legacy.friends_count,
+            followers_count: userInfo.legacy.followers_count
+        };
+        
+        // Ensure user is in core_nodes table
+        db.upsertCoreNode(node);
+        
+        await processCoreNode(node, 1, 1);
+        log('Single user scrape complete!');
         process.exit(0);
     }
     
