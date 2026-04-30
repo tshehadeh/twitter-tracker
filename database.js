@@ -161,8 +161,13 @@ const statements = {
     
     // Core nodes statements
     insertCoreNode: db.prepare(`
-        INSERT OR REPLACE INTO core_nodes (twitter_id, username, display_name, following_count, followers_count)
+        INSERT INTO core_nodes (twitter_id, username, display_name, following_count, followers_count)
         VALUES (?, ?, ?, ?, ?)
+        ON CONFLICT(twitter_id) DO UPDATE SET
+            username = excluded.username,
+            display_name = excluded.display_name,
+            following_count = excluded.following_count,
+            followers_count = excluded.followers_count
     `),
     
     getCoreNodeByTwitterId: db.prepare(`SELECT * FROM core_nodes WHERE twitter_id = ?`),
