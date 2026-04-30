@@ -3,6 +3,7 @@ let currentSessionId = null;
 let currentUser = null;
 let currentNewFollow = null;
 let currentView = 'welcome';
+let currentDate = null; // For date-based new follows filtering
 
 // DOM Elements
 const views = {
@@ -55,6 +56,7 @@ const elements = {
     // New Follows elements
     newFollowsBtn: document.getElementById('new-follows-btn'),
     countNewFollows: document.getElementById('count-new-follows'),
+    dateTabs: document.getElementById('date-tabs'),
     nfUnreviewedCount: document.getElementById('nf-unreviewed-count'),
     nfTotalCount: document.getElementById('nf-total-count'),
     nfBackBtn: document.getElementById('nf-back-btn'),
@@ -395,19 +397,81 @@ function goBack() {
 // Load new follows stats and update badge
 async function loadNewFollowsStats() {
     try {
-        const { stats } = await api('/new-follows/stats');
+        const { stats, byDate } = await api('/new-follows/stats');
         const unreviewed = stats.unreviewed || 0;
         elements.countNewFollows.textContent = unreviewed;
         elements.countNewFollows.classList.toggle('highlight', unreviewed > 0);
+        return { stats, byDate };
     } catch (error) {
         console.error('Error loading new follows stats:', error);
+        return { stats: { total: 0, unreviewed: 0 }, byDate: [] };
     }
+}
+
+// Format date for display
+function formatDateLabel(dateStr) {
+    const date = new Date(dateStr + 'T00:00:00');
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const yesterday = new Date(today);
+    yesterday.setDate(yesterday.getDate() - 1);
+    
+    if (date.getTime() === today.getTime()) {
+        return 'Today';
+    } else if (date.getTime() === yesterday.getTime()) {
+        return 'Yesterday';
+    } else {
+        return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    }
+}
+
+// Render date tabs
+function renderDateTabs(byDate) {
+    if (!byDate || byDate.length === 0) {
+        elements.dateTabs.innerHTML = '<span style="color: var(--text-secondary); font-size: 0.875rem;">No data yet</span>';
+        return;
+    }
+    
+    elements.dateTabs.innerHTML = byDate.map(d => {
+        const isActive = d.date === currentDate;
+        const label = formatDateLabel(d.date);
+        return `
+            <button class="date-tab ${isActive ? 'active' : ''}" data-date="${d.date}">
+                ${label}<span class="tab-count">(${d.unreviewed}/${d.count})</span>
+            </button>
+        `;
+    }).join('');
+    
+    // Add click handlers
+    elements.dateTabs.querySelectorAll('.date-tab').forEach(tab => {
+        tab.addEventListener('click', () => selectDate(tab.dataset.date));
+    });
+}
+
+// Select a date tab
+async function selectDate(date) {
+    currentDate = date;
+    showNfLoading(true);
+    await loadNextNewFollow();
 }
 
 // Show new follows view
 async function showNewFollowsView() {
     showView('newFollows');
     showNfLoading(true);
+    
+    // Load stats and date tabs
+    const { byDate } = await loadNewFollowsStats();
+    
+    // Auto-select first date with unreviewed items, or just first date
+    if (byDate && byDate.length > 0) {
+        const dateWithUnreviewed = byDate.find(d => d.unreviewed > 0);
+        currentDate = dateWithUnreviewed ? dateWithUnreviewed.date : byDate[0].date;
+    } else {
+        currentDate = null;
+    }
+    
+    renderDateTabs(byDate);
     await loadNextNewFollow();
 }
 
@@ -423,12 +487,23 @@ async function loadNextNewFollow() {
     showNfLoading(true);
     
     try {
-        const { newFollow, stats, message } = await api('/new-follows/next');
+        // Use date-specific endpoint if we have a current date
+        const endpoint = currentDate 
+            ? `/new-follows/date/${currentDate}/next`
+            : '/new-follows/next';
         
-        // Update stats
+        const { newFollow, stats, byDate, message } = await api(endpoint);
+        
+        // Update stats for current date
         elements.nfUnreviewedCount.textContent = stats.unreviewed || 0;
         elements.nfTotalCount.textContent = stats.total || 0;
-        elements.countNewFollows.textContent = stats.unreviewed || 0;
+        
+        // Update overall badge count (sum of all unreviewed)
+        if (byDate) {
+            const totalUnreviewed = byDate.reduce((sum, d) => sum + (d.unreviewed || 0), 0);
+            elements.countNewFollows.textContent = totalUnreviewed;
+            renderDateTabs(byDate);
+        }
         
         if (!newFollow) {
             elements.nfLoadingCard.style.display = 'none';

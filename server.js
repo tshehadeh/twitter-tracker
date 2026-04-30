@@ -318,6 +318,40 @@ app.post('/api/new-follows/:id/categorize', (req, res) => {
     }
 });
 
+// API: Get next unreviewed new follow for a specific date
+app.get('/api/new-follows/date/:date/next', (req, res) => {
+    const { date } = req.params;
+    
+    try {
+        const newFollow = db.getNextUnreviewedNewFollowByDate(date);
+        const stats = db.getStatsByDate(date);
+        const byDate = db.getNewFollowsByDate();
+        
+        if (!newFollow) {
+            return res.json({ 
+                newFollow: null, 
+                message: 'All new follows for this date reviewed',
+                stats,
+                byDate
+            });
+        }
+        
+        res.json({ newFollow, stats, byDate });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// API: Get dates with new follows
+app.get('/api/new-follows/dates', (req, res) => {
+    try {
+        const byDate = db.getNewFollowsByDate();
+        res.json({ byDate });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
 // API: Get core nodes list
 app.get('/api/core-nodes', (req, res) => {
     try {

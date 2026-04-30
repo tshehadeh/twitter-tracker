@@ -665,6 +665,48 @@ body {
     font-size: 1rem;
 }
 
+/* Date Tabs */
+.date-tabs-container {
+    padding: 0 24px;
+    background: var(--bg-secondary);
+    border-bottom: 1px solid var(--border);
+    overflow-x: auto;
+}
+
+.date-tabs {
+    display: flex;
+    gap: 4px;
+    padding: 12px 0;
+}
+
+.date-tab {
+    padding: 8px 16px;
+    background: transparent;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    color: var(--text-secondary);
+    cursor: pointer;
+    font-size: 0.8125rem;
+    white-space: nowrap;
+    transition: all 0.15s;
+}
+
+.date-tab:hover {
+    border-color: var(--accent);
+    color: var(--text);
+}
+
+.date-tab.active {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: white;
+}
+
+.date-tab .tab-count {
+    margin-left: 6px;
+    opacity: 0.7;
+}
+
 /* Responsive */
 @media (max-width: 768px) {
     .sidebar {

@@ -245,11 +245,37 @@ const statements = {
     `),
     
     getNewFollowsByDate: db.prepare(`
-        SELECT DATE(detected_at) as date, COUNT(*) as count
+        SELECT DATE(detected_at) as date, 
+               COUNT(*) as count,
+               SUM(CASE WHEN reviewed = 0 THEN 1 ELSE 0 END) as unreviewed
         FROM new_follows
         GROUP BY DATE(detected_at)
         ORDER BY date DESC
         LIMIT 30
+    `),
+    
+    getNextUnreviewedNewFollowByDate: db.prepare(`
+        SELECT nf.*, 
+               cn.username as core_node_username, cn.display_name as core_node_display_name,
+               u.username as followed_username, u.display_name as followed_display_name,
+               u.bio as followed_bio, u.followers_count as followed_followers,
+               u.following_count as followed_following, u.profile_image_url as followed_avatar,
+               u.verified as followed_verified, u.id as followed_user_db_id
+        FROM new_follows nf
+        JOIN core_nodes cn ON nf.core_node_id = cn.id
+        JOIN users u ON nf.followed_user_id = u.id
+        LEFT JOIN categorizations c ON u.id = c.user_id
+        WHERE nf.reviewed = 0 AND c.id IS NULL AND DATE(nf.detected_at) = ?
+        ORDER BY nf.detected_at DESC
+        LIMIT 1
+    `),
+    
+    getStatsByDate: db.prepare(`
+        SELECT 
+            COUNT(*) as total,
+            SUM(CASE WHEN reviewed = 0 THEN 1 ELSE 0 END) as unreviewed
+        FROM new_follows
+        WHERE DATE(detected_at) = ?
     `),
 };
 
@@ -446,6 +472,16 @@ const dbFunctions = {
     // Get new follows grouped by date
     getNewFollowsByDate() {
         return statements.getNewFollowsByDate.all();
+    },
+    
+    // Get next unreviewed new follow for a specific date
+    getNextUnreviewedNewFollowByDate(date) {
+        return statements.getNextUnreviewedNewFollowByDate.get(date);
+    },
+    
+    // Get stats for a specific date
+    getStatsByDate(date) {
+        return statements.getStatsByDate.get(date) || { total: 0, unreviewed: 0 };
     },
     
     // Bulk load core nodes from JSON
