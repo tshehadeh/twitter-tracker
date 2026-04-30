@@ -229,12 +229,13 @@ Options:
             process.exit(1);
         }
         
+        // getUserByUsername returns the legacy object directly
         const node = {
-            user_id: userInfo.rest_id,
-            username: userInfo.legacy.screen_name,
-            display_name: userInfo.legacy.name,
-            following_count: userInfo.legacy.friends_count,
-            followers_count: userInfo.legacy.followers_count
+            user_id: userInfo.id_str,
+            username: userInfo.screen_name,
+            display_name: userInfo.name,
+            following_count: userInfo.friends_count,
+            followers_count: userInfo.followers_count
         };
         
         // Ensure user is in core_nodes table
