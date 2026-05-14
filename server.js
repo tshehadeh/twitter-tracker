@@ -352,6 +352,47 @@ app.get('/api/new-follows/dates', (req, res) => {
     }
 });
 
+// API: Get grouped new follows for a date (sorted by follow count)
+app.get('/api/new-follows/date/:date/grouped', (req, res) => {
+    const { date } = req.params;
+    
+    try {
+        const grouped = db.getGroupedNewFollowsByDate(date);
+        const stats = db.getGroupedNewFollowsStats(date);
+        const byDate = db.getNewFollowsByDate();
+        
+        res.json({ grouped, stats, byDate });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// API: Categorize all new follows for a user (grouped categorization)
+app.post('/api/new-follows/user/:userId/categorize', (req, res) => {
+    const userId = parseInt(req.params.userId);
+    const { category } = req.body;
+    
+    if (!category) {
+        return res.status(400).json({ error: 'category required' });
+    }
+    
+    if (!['outbound', 'track', 'pass'].includes(category)) {
+        return res.status(400).json({ error: 'Invalid category' });
+    }
+    
+    try {
+        // Mark all new_follows for this user as reviewed
+        db.categorizeNewFollowsByUserId(userId, category);
+        
+        // Also add to main categorizations table
+        db.categorizeUser(userId, category, null);
+        
+        res.json({ success: true });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
 // API: Get core nodes list
 app.get('/api/core-nodes', (req, res) => {
     try {

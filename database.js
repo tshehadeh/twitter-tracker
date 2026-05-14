@@ -282,6 +282,49 @@ const statements = {
         FROM new_follows
         WHERE DATE(detected_at) = ?
     `),
+    
+    // Grouped new follows - aggregated by followed user, sorted by follow count
+    getGroupedNewFollowsByDate: db.prepare(`
+        SELECT 
+            u.id as user_id,
+            u.twitter_id,
+            u.username,
+            u.display_name,
+            u.bio,
+            u.followers_count,
+            u.following_count,
+            u.profile_image_url,
+            u.verified,
+            COUNT(nf.id) as follow_count,
+            GROUP_CONCAT(cn.username) as followed_by_usernames,
+            GROUP_CONCAT(cn.id) as followed_by_ids,
+            GROUP_CONCAT(nf.id) as new_follow_ids,
+            MIN(nf.detected_at) as first_detected
+        FROM new_follows nf
+        JOIN users u ON nf.followed_user_id = u.id
+        JOIN core_nodes cn ON nf.core_node_id = cn.id
+        LEFT JOIN categorizations c ON u.id = c.user_id
+        WHERE nf.reviewed = 0 AND c.id IS NULL AND DATE(nf.detected_at) = ?
+        GROUP BY nf.followed_user_id
+        ORDER BY follow_count DESC, u.followers_count DESC
+    `),
+    
+    getGroupedNewFollowsStats: db.prepare(`
+        SELECT 
+            COUNT(DISTINCT nf.followed_user_id) as unique_users,
+            COUNT(nf.id) as total_follows,
+            SUM(CASE WHEN nf.reviewed = 0 THEN 1 ELSE 0 END) as unreviewed
+        FROM new_follows nf
+        LEFT JOIN categorizations c ON nf.followed_user_id = c.user_id
+        WHERE nf.reviewed = 0 AND c.id IS NULL AND DATE(nf.detected_at) = ?
+    `),
+    
+    // Mark all new_follows for a user as reviewed
+    categorizeNewFollowsByUserId: db.prepare(`
+        UPDATE new_follows 
+        SET reviewed = 1, category = ? 
+        WHERE followed_user_id = ? AND reviewed = 0
+    `),
 };
 
 // Database functions
@@ -487,6 +530,27 @@ const dbFunctions = {
     // Get stats for a specific date
     getStatsByDate(date) {
         return statements.getStatsByDate.get(date) || { total: 0, unreviewed: 0 };
+    },
+    
+    // Get grouped new follows for a date (sorted by follow count)
+    getGroupedNewFollowsByDate(date) {
+        const results = statements.getGroupedNewFollowsByDate.all(date);
+        return results.map(row => ({
+            ...row,
+            followed_by_usernames: row.followed_by_usernames ? row.followed_by_usernames.split(',') : [],
+            followed_by_ids: row.followed_by_ids ? row.followed_by_ids.split(',').map(Number) : [],
+            new_follow_ids: row.new_follow_ids ? row.new_follow_ids.split(',').map(Number) : []
+        }));
+    },
+    
+    // Get grouped stats for a date
+    getGroupedNewFollowsStats(date) {
+        return statements.getGroupedNewFollowsStats.get(date) || { unique_users: 0, total_follows: 0, unreviewed: 0 };
+    },
+    
+    // Categorize all new follows for a specific user
+    categorizeNewFollowsByUserId(userId, category) {
+        return statements.categorizeNewFollowsByUserId.run(category, userId);
     },
     
     // Bulk load core nodes from JSON

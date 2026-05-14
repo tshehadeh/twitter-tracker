@@ -4,6 +4,8 @@ let currentUser = null;
 let currentNewFollow = null;
 let currentView = 'welcome';
 let currentDate = null; // For date-based new follows filtering
+let groupedNewFollows = []; // List of grouped follows for current date
+let currentGroupedIndex = 0; // Current position in grouped list
 
 // DOM Elements
 const views = {
@@ -482,30 +484,12 @@ function showNfLoading(loading) {
     elements.nfEmptyCard.style.display = 'none';
 }
 
-// Load next new follow
-async function loadNextNewFollow() {
+// Load grouped new follows for current date
+async function loadGroupedNewFollows() {
     showNfLoading(true);
     
     try {
-        // Use date-specific endpoint if we have a current date
-        const endpoint = currentDate 
-            ? `/new-follows/date/${currentDate}/next`
-            : '/new-follows/next';
-        
-        const { newFollow, stats, byDate, message } = await api(endpoint);
-        
-        // Update stats for current date
-        elements.nfUnreviewedCount.textContent = stats.unreviewed || 0;
-        elements.nfTotalCount.textContent = stats.total || 0;
-        
-        // Update overall badge count (sum of all unreviewed)
-        if (byDate) {
-            const totalUnreviewed = byDate.reduce((sum, d) => sum + (d.unreviewed || 0), 0);
-            elements.countNewFollows.textContent = totalUnreviewed;
-            renderDateTabs(byDate);
-        }
-        
-        if (!newFollow) {
+        if (!currentDate) {
             elements.nfLoadingCard.style.display = 'none';
             elements.nfCard.style.display = 'none';
             elements.nfEmptyCard.style.display = 'block';
@@ -513,36 +497,104 @@ async function loadNextNewFollow() {
             return;
         }
         
-        currentNewFollow = newFollow;
-        displayNewFollow(newFollow);
+        const { grouped, stats, byDate } = await api(`/new-follows/date/${currentDate}/grouped`);
+        
+        // Store grouped follows
+        groupedNewFollows = grouped || [];
+        currentGroupedIndex = 0;
+        
+        // Update stats
+        elements.nfUnreviewedCount.textContent = stats.unique_users || 0;
+        elements.nfTotalCount.textContent = stats.total_follows || 0;
+        
+        // Update overall badge count
+        if (byDate) {
+            const totalUnreviewed = byDate.reduce((sum, d) => sum + (d.unreviewed || 0), 0);
+            elements.countNewFollows.textContent = totalUnreviewed;
+            renderDateTabs(byDate);
+        }
+        
+        // Display first grouped follow
+        if (groupedNewFollows.length === 0) {
+            elements.nfLoadingCard.style.display = 'none';
+            elements.nfCard.style.display = 'none';
+            elements.nfEmptyCard.style.display = 'block';
+            disableNfActionButtons(true);
+            return;
+        }
+        
+        displayGroupedNewFollow(groupedNewFollows[0]);
         disableNfActionButtons(false);
         
     } catch (error) {
-        console.error('Error loading next new follow:', error);
+        console.error('Error loading grouped new follows:', error);
     }
 }
 
-// Display new follow card
-function displayNewFollow(nf) {
+// Legacy function - now calls grouped version
+async function loadNextNewFollow() {
+    await loadGroupedNewFollows();
+}
+
+// Display grouped new follow card
+function displayGroupedNewFollow(gf) {
     showNfLoading(false);
     
-    const avatarUrl = nf.followed_avatar 
-        ? nf.followed_avatar.replace('_normal', '_200x200')
+    const avatarUrl = gf.profile_image_url 
+        ? gf.profile_image_url.replace('_normal', '_200x200')
         : '';
     
-    elements.nfCoreNode.textContent = `@${nf.core_node_username}`;
+    // Format "followed by" text
+    const usernames = gf.followed_by_usernames || [];
+    let followedByText;
+    if (usernames.length === 1) {
+        followedByText = `@${usernames[0]} started following`;
+    } else if (usernames.length === 2) {
+        followedByText = `@${usernames[0]} and @${usernames[1]} started following`;
+    } else if (usernames.length <= 4) {
+        const lastUser = usernames[usernames.length - 1];
+        const otherUsers = usernames.slice(0, -1).map(u => `@${u}`).join(', ');
+        followedByText = `${otherUsers}, and @${lastUser} started following`;
+    } else {
+        const shown = usernames.slice(0, 3).map(u => `@${u}`).join(', ');
+        followedByText = `${shown}, +${usernames.length - 3} more started following`;
+    }
+    
+    // Update the header with follow count badge
+    const badgeClass = gf.follow_count >= 3 ? 'follow-count-badge high' : 'follow-count-badge';
+    elements.nfCoreNode.innerHTML = `<span class="${badgeClass}">${gf.follow_count}</span> ${followedByText}`;
+    
     elements.nfAvatar.src = avatarUrl;
     elements.nfAvatar.onerror = () => {
         elements.nfAvatar.src = 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect fill="%23333" width="100" height="100"/><text x="50" y="60" font-size="40" text-anchor="middle" fill="%23666">?</text></svg>';
     };
     
-    elements.nfDisplayName.textContent = nf.followed_display_name || nf.followed_username;
-    elements.nfUsername.textContent = `@${nf.followed_username}`;
-    elements.nfVerified.style.display = nf.followed_verified ? 'flex' : 'none';
-    elements.nfBio.textContent = nf.followed_bio || 'No bio';
-    elements.nfFollowers.textContent = formatNumber(nf.followed_followers || 0);
-    elements.nfFollowing.textContent = formatNumber(nf.followed_following || 0);
-    elements.nfLink.href = `https://x.com/${nf.followed_username}`;
+    elements.nfDisplayName.textContent = gf.display_name || gf.username;
+    elements.nfUsername.textContent = `@${gf.username}`;
+    elements.nfVerified.style.display = gf.verified ? 'flex' : 'none';
+    elements.nfBio.textContent = gf.bio || 'No bio';
+    elements.nfFollowers.textContent = formatNumber(gf.followers_count || 0);
+    elements.nfFollowing.textContent = formatNumber(gf.following_count || 0);
+    elements.nfLink.href = `https://x.com/${gf.username}`;
+    
+    // Store current for categorization
+    currentNewFollow = gf;
+}
+
+// Legacy display function
+function displayNewFollow(nf) {
+    displayGroupedNewFollow({
+        profile_image_url: nf.followed_avatar,
+        followed_by_usernames: [nf.core_node_username],
+        follow_count: 1,
+        display_name: nf.followed_display_name,
+        username: nf.followed_username,
+        verified: nf.followed_verified,
+        bio: nf.followed_bio,
+        followers_count: nf.followed_followers,
+        following_count: nf.followed_following,
+        user_id: nf.followed_user_db_id
+    });
 }
 
 // Disable/enable new follows action buttons
@@ -552,23 +604,30 @@ function disableNfActionButtons(disabled) {
     elements.nfBtnPass.disabled = disabled;
 }
 
-// Categorize new follow
+// Categorize new follow (grouped - marks all new_follows for this user)
 async function categorizeNewFollow(category) {
     if (!currentNewFollow) return;
     
     disableNfActionButtons(true);
     
     try {
-        await api(`/new-follows/${currentNewFollow.id}/categorize`, {
+        // Use the grouped categorization endpoint
+        await api(`/new-follows/user/${currentNewFollow.user_id}/categorize`, {
             method: 'POST',
-            body: {
-                category,
-                userId: currentNewFollow.followed_user_db_id,
-            },
+            body: { category },
         });
         
         await loadCounts();
-        await loadNextNewFollow();
+        
+        // Move to next in the grouped list
+        currentGroupedIndex++;
+        if (currentGroupedIndex < groupedNewFollows.length) {
+            displayGroupedNewFollow(groupedNewFollows[currentGroupedIndex]);
+            disableNfActionButtons(false);
+        } else {
+            // Reload to get fresh data
+            await loadGroupedNewFollows();
+        }
         
     } catch (error) {
         console.error('Error categorizing new follow:', error);

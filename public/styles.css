@@ -707,6 +707,31 @@ body {
     opacity: 0.7;
 }
 
+/* Follow Count Badge */
+.follow-count-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 24px;
+    height: 24px;
+    padding: 0 8px;
+    background: var(--accent);
+    color: white;
+    border-radius: 12px;
+    font-weight: 600;
+    font-size: 0.875rem;
+    margin-right: 8px;
+}
+
+.follow-count-badge.high {
+    background: #ef4444;
+}
+
+.followed-by-text {
+    color: var(--text-secondary);
+    font-size: 0.9375rem;
+}
+
 /* Responsive */
 @media (max-width: 768px) {
     .sidebar {
