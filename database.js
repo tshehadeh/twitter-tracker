@@ -7,6 +7,9 @@ const db = new Database(dbPath);
 // Enable foreign keys
 db.pragma('foreign_keys = ON');
 
+// Enable WAL mode for better concurrent access
+db.pragma('journal_mode = WAL');
+
 // Create tables
 db.exec(`
     CREATE TABLE IF NOT EXISTS users (
