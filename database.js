@@ -228,12 +228,13 @@ const statements = {
                u.username as followed_username, u.display_name as followed_display_name,
                u.bio as followed_bio, u.followers_count as followed_followers,
                u.following_count as followed_following, u.profile_image_url as followed_avatar,
-               u.verified as followed_verified, u.id as followed_user_db_id
+               u.verified as followed_verified, u.id as followed_user_db_id,
+               c.category as existing_category
         FROM new_follows nf
         JOIN core_nodes cn ON nf.core_node_id = cn.id
         JOIN users u ON nf.followed_user_id = u.id
         LEFT JOIN categorizations c ON u.id = c.user_id
-        WHERE nf.reviewed = 0 AND c.id IS NULL
+        WHERE nf.reviewed = 0
         ORDER BY nf.detected_at DESC
         LIMIT 1
     `),
@@ -268,12 +269,13 @@ const statements = {
                u.username as followed_username, u.display_name as followed_display_name,
                u.bio as followed_bio, u.followers_count as followed_followers,
                u.following_count as followed_following, u.profile_image_url as followed_avatar,
-               u.verified as followed_verified, u.id as followed_user_db_id
+               u.verified as followed_verified, u.id as followed_user_db_id,
+               c.category as existing_category
         FROM new_follows nf
         JOIN core_nodes cn ON nf.core_node_id = cn.id
         JOIN users u ON nf.followed_user_id = u.id
         LEFT JOIN categorizations c ON u.id = c.user_id
-        WHERE nf.reviewed = 0 AND c.id IS NULL AND DATE(nf.detected_at) = ?
+        WHERE nf.reviewed = 0 AND DATE(nf.detected_at) = ?
         ORDER BY nf.detected_at DESC
         LIMIT 1
     `),
