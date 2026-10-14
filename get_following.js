@@ -105,30 +105,93 @@ async function getUserByUsername(username) {
     return result.legacy;
 }
 
-// Get one page of following (100 users max)
+// Get one page of following (100 users max) - GraphQL version
 function getFollowing(id, cursor) {
     return new Promise((resolve, reject) => {
-        fetch(
-            `https://x.com/i/api/1.1/friends/list.json?include_followed_by=1&user_id=${id}&count=100${
-                cursor ? `&cursor=${cursor}` : ""
-            }`,
-            {
-                headers: {
-                    authorization: CONFIG.public_token,
-                    "x-csrf-token": CONFIG.csrf,
-                    "x-twitter-auth-type": "OAuth2Session",
-                    "content-type": "application/x-www-form-urlencoded; charset=UTF-8",
-                },
-            }
-        )
+        const variables = {
+            userId: id,
+            count: 100,
+            includePromotedContent: false,
+        };
+        if (cursor) variables.cursor = cursor;
+
+        const features = {
+            rweb_lists_timeline_redesign_enabled: false,
+            responsive_web_graphql_exclude_directive_enabled: true,
+            verified_phone_label_enabled: false,
+            creator_subscriptions_tweet_preview_api_enabled: true,
+            responsive_web_graphql_timeline_navigation_enabled: true,
+            responsive_web_graphql_skip_user_profile_image_extensions_enabled: false,
+            tweetypie_unmention_optimization_enabled: true,
+            responsive_web_edit_tweet_api_enabled: true,
+            graphql_is_translatable_rweb_tweet_is_translatable_enabled: true,
+            view_counts_everywhere_api_enabled: true,
+            longform_notetweets_consumption_enabled: true,
+            responsive_web_twitter_article_tweet_consumption_enabled: false,
+            tweet_awards_web_tipping_enabled: false,
+            freedom_of_speech_not_reach_fetch_enabled: true,
+            standardized_nudges_misinfo: true,
+            tweet_with_visibility_results_prefer_gql_limited_actions_policy_enabled: true,
+            longform_notetweets_rich_text_read_enabled: true,
+            longform_notetweets_inline_media_enabled: true,
+            responsive_web_media_download_video_enabled: false,
+            responsive_web_enhance_cards_enabled: false,
+        };
+
+        const url = `https://x.com/i/api/graphql/t-BPOrMIduGUJWO_LxcvNQ/Following?variables=${encodeURIComponent(
+            JSON.stringify(variables)
+        )}&features=${encodeURIComponent(JSON.stringify(features))}`;
+
+        fetch(url, {
+            headers: {
+                authorization: CONFIG.public_token,
+                "x-csrf-token": CONFIG.csrf,
+                "x-twitter-auth-type": "OAuth2Session",
+                "content-type": "application/x-www-form-urlencoded; charset=UTF-8",
+            },
+        })
             .then((i) => i.json())
             .then((data) => {
                 if (data.errors && data.errors[0]) {
-                    return reject(data.errors[0].message);
+                    if (data.errors[0].code === 32) {
+                        return reject(new Error("Not logged in"));
+                    }
+                    return reject(new Error(data.errors[0].message));
                 }
+
+                // Parse GraphQL response structure
+                const instructions = data.data.user.result.timeline.timeline.instructions;
+                const addEntries = instructions.find((i) => i.type === "TimelineAddEntries");
+                
+                if (!addEntries || !addEntries.entries) {
+                    return resolve({ list: [], cursor: null });
+                }
+
+                const entries = addEntries.entries;
+                
+                // Extract users from entries
+                const list = entries
+                    .filter((e) => e.entryId.startsWith("user-"))
+                    .map((e) => {
+                        const user = e.content?.itemContent?.user_results?.result;
+                        if (!user || !user.legacy) return null;
+                        
+                        user.legacy.id_str = user.rest_id;
+                        if (user.is_blue_verified && !user.legacy.verified_type) {
+                            user.legacy.verified = true;
+                            user.legacy.verified_type = "Blue";
+                        }
+                        return user.legacy;
+                    })
+                    .filter((e) => e);
+
+                // Find cursor for next page
+                const cursorEntry = entries.find((e) => e.entryId.startsWith("cursor-bottom-"));
+                const nextCursor = cursorEntry?.content?.value || null;
+
                 resolve({
-                    list: data.users,
-                    cursor: data.next_cursor_str !== "0" ? data.next_cursor_str : null,
+                    list,
+                    cursor: nextCursor,
                 });
             })
             .catch((e) => {
