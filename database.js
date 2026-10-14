@@ -567,4 +567,7 @@ const dbFunctions = {
     },
 };
 
+// Export the raw db connection for custom queries
+dbFunctions.db = db;
+
 module.exports = dbFunctions;
