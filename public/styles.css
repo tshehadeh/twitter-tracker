@@ -458,7 +458,8 @@ body {
    ================================ */
 
 .card-container {
-    max-width: 460px;
+    width: 460px;
+    max-width: 100%;
     margin: 0 auto;
     padding: var(--space-xl);
 }
@@ -471,6 +472,7 @@ body {
     background: var(--bg-paper);
     border: 1px solid var(--border);
     padding: var(--space-lg);
+    min-height: 280px;
 }
 
 .card-header {
@@ -497,6 +499,10 @@ body {
     font-size: 18px;
     font-weight: 600;
     color: var(--text-primary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 300px;
 }
 
 .card-username {
@@ -524,6 +530,12 @@ body {
     margin-bottom: var(--space-md);
     padding-bottom: var(--space-md);
     border-bottom: 1px solid var(--border);
+    min-height: 48px;
+    max-height: 72px;
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
 }
 
 .card-stats {
