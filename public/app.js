@@ -92,6 +92,9 @@ const elements = {
     firmMembersList: document.getElementById('firm-members-list'),
     addMemberInput: document.getElementById('add-member-input'),
     addMemberBtn: document.getElementById('add-member-btn'),
+    
+    // Theme toggle
+    themeToggle: document.getElementById('theme-toggle'),
 };
 
 // View Management
@@ -1059,6 +1062,25 @@ elements.addMemberInput.addEventListener('keypress', (e) => {
     }
 });
 
+// Theme toggle
+function toggleTheme() {
+    const currentTheme = document.documentElement.getAttribute('data-theme');
+    const newTheme = currentTheme === 'light' ? 'dark' : 'light';
+    document.documentElement.setAttribute('data-theme', newTheme);
+    localStorage.setItem('theme', newTheme);
+    elements.themeToggle.textContent = newTheme === 'light' ? '◑' : '◐';
+}
+
+function loadSavedTheme() {
+    const savedTheme = localStorage.getItem('theme') || 'dark';
+    document.documentElement.setAttribute('data-theme', savedTheme);
+    if (elements.themeToggle) {
+        elements.themeToggle.textContent = savedTheme === 'light' ? '◑' : '◐';
+    }
+}
+
+elements.themeToggle.addEventListener('click', toggleTheme);
+
 // Keyboard shortcuts
 document.addEventListener('keydown', (e) => {
     // Handle review view shortcuts
@@ -1100,6 +1122,7 @@ document.addEventListener('keydown', (e) => {
 
 // Initialize
 async function init() {
+    loadSavedTheme();
     await loadSessions();
     await loadCounts();
     await loadNewFollowsStats();

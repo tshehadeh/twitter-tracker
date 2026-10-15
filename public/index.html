@@ -3,19 +3,41 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Twitter Following Tracker</title>
+    <title>Attention Is All You Need</title>
     <link rel="stylesheet" href="styles.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=CMU+Serif:wght@400;700&family=Inter:wght@400;500;600&family=Crimson+Pro:wght@400;600&display=swap" rel="stylesheet">
 </head>
 <body>
     <div class="app">
         <!-- Sidebar -->
         <aside class="sidebar">
             <div class="sidebar-header">
-                <h1>Tracker</h1>
+                <h1>Attention Is All You Need</h1>
+                <button id="theme-toggle" class="theme-toggle" title="Toggle light/dark mode">◐</button>
             </div>
             
             <div class="sidebar-section">
-                <h2>Sessions</h2>
+                <h2>§1. Review</h2>
+                <nav class="review-nav">
+                    <button id="new-follows-btn" class="review-btn">
+                        <span class="review-label">Review Firms</span>
+                        <span id="count-new-follows" class="review-count">0</span>
+                    </button>
+                    <button id="review-operators-btn" class="review-btn" disabled>
+                        <span class="review-label">Review Operators</span>
+                        <span id="count-operators" class="review-count">—</span>
+                    </button>
+                    <button id="review-angels-btn" class="review-btn" disabled>
+                        <span class="review-label">Review Angels</span>
+                        <span id="count-angels" class="review-count">—</span>
+                    </button>
+                </nav>
+            </div>
+            
+            <div class="sidebar-section">
+                <h2>§2. Sessions</h2>
                 <div id="sessions-list" class="sessions-list">
                     <!-- Sessions populated by JS -->
                 </div>
@@ -23,29 +45,20 @@
             </div>
             
             <div class="sidebar-section">
-                <h2>New Follows</h2>
-                <button id="new-follows-btn" class="new-follows-btn">
-                    <span class="new-follows-icon">🔔</span>
-                    Review New Follows
-                    <span id="count-new-follows" class="category-count highlight">0</span>
-                </button>
-            </div>
-            
-            <div class="sidebar-section">
-                <h2>Categories</h2>
+                <h2>§3. Categories</h2>
                 <nav class="category-nav">
                     <button class="category-btn" data-category="outbound">
-                        <span class="category-dot outbound"></span>
+                        <span class="category-marker">○</span>
                         Outbound
                         <span id="count-outbound" class="category-count">0</span>
                     </button>
                     <button class="category-btn" data-category="track">
-                        <span class="category-dot track"></span>
+                        <span class="category-marker">△</span>
                         Track
                         <span id="count-track" class="category-count">0</span>
                     </button>
                     <button class="category-btn" data-category="pass">
-                        <span class="category-dot pass"></span>
+                        <span class="category-marker">□</span>
                         Pass
                         <span id="count-pass" class="category-count">0</span>
                     </button>
