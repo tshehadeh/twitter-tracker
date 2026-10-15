@@ -92,7 +92,7 @@ function assignExistingNodes() {
     console.log(`\n📊 Assigned ${assigned} nodes to firms`);
 }
 
-// Find employees from firm's following list
+// Find employees by searching ALL users in database for firm keywords in bio
 async function discoverEmployees(firmId) {
     const firm = FIRMS[firmId];
     if (!firm) {
@@ -100,41 +100,27 @@ async function discoverEmployees(firmId) {
         return;
     }
     
-    console.log(`\n🔍 Discovering ${firm.name} employees...\n`);
+    console.log(`\n🔍 Discovering ${firm.name} employees from your database...\n`);
+    console.log(`Searching for bios containing: ${firm.bioKeywords.join(', ')}\n`);
     
-    // Get the firm's main account(s) from core_nodes
-    const firmNodes = db.getCoreNodesByFirm(firmId);
-    if (firmNodes.length === 0) {
-        console.log(`⚠️ No main accounts found for ${firm.name}. Run --assign first.`);
-        return;
-    }
+    // Search ALL users in the database for bio keywords
+    const allUsers = db.db.prepare('SELECT * FROM users WHERE bio IS NOT NULL').all();
     
     const employees = new Map();
     
-    for (const node of firmNodes) {
-        console.log(`📥 Checking who @${node.username} follows...`);
+    for (const user of allUsers) {
+        const bioLower = user.bio.toLowerCase();
         
-        // Get users this firm account follows
-        const following = db.db.prepare(`
-            SELECT u.* FROM users u
-            JOIN follows f ON f.followed_user_id = u.id
-            WHERE f.core_node_id = ? AND f.is_active = 1
-        `).all(node.id);
-        
-        // Filter for employees (bio contains firm keywords)
-        for (const user of following) {
-            if (!user.bio) continue;
-            const bioLower = user.bio.toLowerCase();
-            
-            if (firm.bioKeywords.some(kw => bioLower.includes(kw.toLowerCase()))) {
-                if (!employees.has(user.twitter_id)) {
-                    employees.set(user.twitter_id, user);
-                }
+        if (firm.bioKeywords.some(kw => bioLower.includes(kw.toLowerCase()))) {
+            // Skip if already a core node
+            const existingNode = db.getCoreNodeByTwitterId(user.twitter_id);
+            if (!existingNode) {
+                employees.set(user.twitter_id, user);
             }
         }
     }
     
-    console.log(`\n👥 Found ${employees.size} potential employees:\n`);
+    console.log(`👥 Found ${employees.size} potential employees (not already tracked):\n`);
     
     for (const [twitterId, user] of employees) {
         console.log(`  @${user.username} - ${user.display_name}`);
