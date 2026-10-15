@@ -655,12 +655,14 @@ const dbFunctions = {
         `).get(firmId);
     },
     
-    // Get core nodes by firm
+    // Get core nodes by firm (with bio from users table if available)
     getCoreNodesByFirm(firmId) {
         return db.prepare(`
-            SELECT * FROM core_nodes 
-            WHERE firm = ? AND is_active = 1
-            ORDER BY followers_count DESC
+            SELECT cn.*, u.bio 
+            FROM core_nodes cn
+            LEFT JOIN users u ON cn.twitter_id = u.twitter_id
+            WHERE cn.firm = ? AND cn.is_active = 1
+            ORDER BY cn.followers_count DESC
         `).all(firmId);
     },
     
