@@ -175,22 +175,456 @@
             <div id="network-view" class="view">
                 <div class="whitepaper">
                     <header class="whitepaper-header">
-                        <h1>Network Intelligence Report</h1>
-                        <p class="whitepaper-subtitle">Ecosystem Mapping & Influence Analysis</p>
-                        <p class="whitepaper-meta">Generated <span id="network-date"></span> • <span id="network-node-count">0</span> nodes • <span id="network-edge-count">0</span> edges</p>
+                        <h1>Attention Is All You Need</h1>
+                        <p class="whitepaper-subtitle">On the Topology of Innovation and the Geometry of Ideas</p>
+                        <p class="whitepaper-meta">Thomas Shehadeh • October 2026</p>
+                        <p class="whitepaper-epigraph">"The network is the computer." — John Gage, Sun Microsystems, 1984</p>
                     </header>
                     
+                    <!-- Part I: Philosophy -->
                     <section class="whitepaper-section">
-                        <h2>§1. Abstract</h2>
-                        <p class="whitepaper-abstract">
-                            This report presents a network analysis of the venture ecosystem based on Twitter follow relationships. 
-                            Using PageRank for influence scoring and Louvain clustering for community detection, we identify 
-                            key players and emerging trends across technology sectors.
+                        <h2>§1. On Attention</h2>
+                        <p class="whitepaper-body">
+                            There is a moment — perhaps you have felt it — when you first see a map of something you thought you understood, 
+                            and realize you understood nothing at all. The first time someone shows you a network graph of the internet, or 
+                            the neural pathways of a brain, or the trade routes of ancient civilizations, something shifts. You see that 
+                            beneath the chaos of individual events lies <em>structure</em>. Patterns. The ghost of an organizing principle 
+                            that nobody designed but everybody participates in.
+                        </p>
+                        <p class="whitepaper-body">
+                            This document describes an attempt to see one such pattern: the network of attention that flows through the 
+                            technology ecosystem. Specifically, we ask: <em>who are the smartest people in venture capital paying attention to?</em>
+                        </p>
+                        <p class="whitepaper-body">
+                            It sounds almost trivially simple. But consider: a venture capitalist's job is, fundamentally, to allocate 
+                            attention before allocating capital. To notice what others have not yet noticed. To see the founder who will 
+                            define the next decade while they are still working from a garage, or a dorm room, or a corner of someone else's office. 
+                            The follow button on Twitter is, in a sense, the smallest possible unit of this attention — a micro-investment 
+                            that costs nothing but reveals everything.
+                        </p>
+                        
+                        <div class="visual-break">
+                            <pre class="ascii-art">
+                     ╭──────────────────────────────────────────╮
+                     │                                          │
+                     │    The follow is the atom of attention.  │
+                     │    The network is the molecule of        │
+                     │    collective intelligence.              │
+                     │                                          │
+                     ╰──────────────────────────────────────────╯
+                            </pre>
+                        </div>
+                        
+                        <p class="whitepaper-body">
+                            When one sophisticated investor follows an unknown account, it could be noise — a friend, a curiosity, a mistake. 
+                            But when <em>five</em> of them do, independently, within the same month? That convergence contains information. 
+                            It is the network speaking in a language we can learn to read.
                         </p>
                     </section>
                     
                     <section class="whitepaper-section">
-                        <h2>§2. Network Visualization</h2>
+                        <h2>§2. The Premise</h2>
+                        <p class="whitepaper-body">
+                            The premise of this system is simple, and perhaps heretical: <strong>attention precedes capital, and capital precedes impact</strong>. 
+                            If we can map attention flows in real-time, we can see where capital will flow next. And if we can see where capital 
+                            will flow, we can see — however dimly — the shape of the future.
+                        </p>
+                        <p class="whitepaper-body">
+                            This is not prediction in the mystical sense. We are not reading tea leaves or consulting oracles. We are 
+                            observing a leading indicator. The same way that certain birds fly south before anyone feels the cold, 
+                            certain patterns of attention emerge before anyone reads the TechCrunch headline. The birds are not 
+                            prophets; they are simply sensitive to signals we have learned to ignore.
+                        </p>
+                        <p class="whitepaper-body">
+                            The question is whether we can become sensitive again.
+                        </p>
+                        
+                        <div class="visual-diagram">
+                            <pre class="ascii-art">
+    ┌─────────────────────────────────────────────────────────────────────┐
+    │                    THE ATTENTION → CAPITAL PIPELINE                 │
+    │                                                                     │
+    │                                                                     │
+    │     ┌─────────┐      ┌─────────┐      ┌─────────┐      ┌─────────┐ │
+    │     │ Idea    │ ──▶  │ Follow  │ ──▶  │ Meeting │ ──▶  │ Check   │ │
+    │     │ Emerges │      │ Pattern │      │ Request │      │ Written │ │
+    │     └─────────┘      └─────────┘      └─────────┘      └─────────┘ │
+    │         │                │                │                │       │
+    │         ▼                ▼                ▼                ▼       │
+    │     ◦ Obscure       ◦ We are          ◦ Warm           ◦ Public    │
+    │       Twitter         HERE              Intros           News      │
+    │                                                                    │
+    │     ───────────────────────────────────────────────────────────▶  │
+    │                         TIME (weeks to months)                     │
+    └─────────────────────────────────────────────────────────────────────┘
+                            </pre>
+                        </div>
+                    </section>
+                    
+                    <section class="whitepaper-section">
+                        <h2>§3. The Network as Organism</h2>
+                        <p class="whitepaper-body">
+                            To understand what we are building, it helps to think of the technology ecosystem not as a market, not as 
+                            an industry, but as something closer to an <em>organism</em>. A vast, distributed intelligence made up of 
+                            thousands of individual actors, each with their own goals and information, but connected by an invisible 
+                            web of relationships, conversations, and — yes — follows.
+                        </p>
+                        <p class="whitepaper-body">
+                            This organism has properties that no individual possesses. It knows things that nobody knows. It makes 
+                            decisions that nobody made. It allocates resources with a strange efficiency that emerges from chaos. 
+                            Economists have a word for this: <em>emergence</em>. The spontaneous appearance of complex behavior from 
+                            simple rules.
+                        </p>
+                        <p class="whitepaper-body">
+                            The follow graph is one window into this emergent intelligence. Not the only window — there are others: 
+                            job changes, conference attendance, patent filings, academic citations. But the follow graph has two 
+                            advantages: it updates in real-time, and it reveals <em>attention</em> rather than <em>commitment</em>. 
+                            You can follow someone without telling anyone. It is the purest signal we have of what sophisticated 
+                            actors are paying attention to.
+                        </p>
+                        
+                        <div class="visual-diagram">
+                            <pre class="ascii-art">
+    ┌─────────────────────────────────────────────────────────────────────┐
+    │                    ECOSYSTEM AS NEURAL NETWORK                      │
+    │                                                                     │
+    │                          ◯        ◯                                 │
+    │                        ╱   ╲    ╱   ╲                               │
+    │                      ◯───────●───────◯          ● = High PageRank  │
+    │                    ╱ │ ╲   ╱ │ ╲   ╱ │ ╲        ◯ = Node           │
+    │                  ◯   ◯   ●   ◯   ●   ◯   ◯      ─ = Follow edge    │
+    │                  │ ╲ │ ╱ │ ╲ │ ╱ │ ╲ │ ╱ │                         │
+    │                  ◯───◯───◯───◯───◯───◯───◯                         │
+    │                   ╲ │ ╱   ╲ │ ╱   ╲ │ ╱                             │
+    │                    ◯       ●       ◯                                │
+    │                                                                     │
+    │              Information flows upward through the graph.            │
+    │              Influence flows downward.                              │
+    └─────────────────────────────────────────────────────────────────────┘
+                            </pre>
+                        </div>
+                    </section>
+                    
+                    <!-- Part II: Architecture -->
+                    <section class="whitepaper-section whitepaper-part-header">
+                        <h2>Part II: The System</h2>
+                        <p class="whitepaper-body part-intro">
+                            "Any sufficiently advanced technology is indistinguishable from magic."<br>
+                            — Arthur C. Clarke
+                        </p>
+                    </section>
+                    
+                    <section class="whitepaper-section">
+                        <h2>§4. Architecture</h2>
+                        <p class="whitepaper-body">
+                            The system comprises three layers, each building on the last:
+                        </p>
+                        
+                        <p class="whitepaper-body">
+                            <strong>4.1 The Sensing Layer</strong> — We maintain a set of approximately 600 "core nodes": venture 
+                            capitalists, angels, operators, and scouts whose judgment we trust. These are the sensory neurons of our 
+                            system. Each night, at midnight Pacific time, we query who each core node follows, comparing against 
+                            yesterday's snapshot to detect new edges in the graph.
+                        </p>
+                        
+                        <p class="whitepaper-body">
+                            <strong>4.2 The Graph Layer</strong> — These follow events accumulate into a social graph G = (V, E), 
+                            where vertices V represent Twitter accounts and edges E represent follow relationships. The graph 
+                            currently contains <strong id="network-node-count">0</strong> nodes and 
+                            <strong id="network-edge-count">0</strong> edges. This is our representation of the ecosystem's 
+                            attention structure.
+                        </p>
+                        
+                        <p class="whitepaper-body">
+                            <strong>4.3 The Intelligence Layer</strong> — Raw graphs are noise. To extract signal, we apply 
+                            algorithms that have proven useful across domains from web search to social network analysis:
+                        </p>
+                        
+                        <div class="visual-diagram">
+                            <pre class="ascii-art">
+    ┌─────────────────────────────────────────────────────────────────────┐
+    │                         THREE-LAYER ARCHITECTURE                    │
+    │                                                                     │
+    │    ┌──────────────────────────────────────────────────────────┐    │
+    │    │  INTELLIGENCE    PageRank │ Clustering │ Momentum        │    │
+    │    └──────────────────────────────────────────────────────────┘    │
+    │                               ▲                                     │
+    │    ┌──────────────────────────────────────────────────────────┐    │
+    │    │  GRAPH           Nodes: <span id="arch-nodes">0</span>     │     Edges: <span id="arch-edges">0</span>       │    │
+    │    └──────────────────────────────────────────────────────────┘    │
+    │                               ▲                                     │
+    │    ┌──────────────────────────────────────────────────────────┐    │
+    │    │  SENSING         ~600 Core Nodes │ Nightly Scrape        │    │
+    │    └──────────────────────────────────────────────────────────┘    │
+    │                                                                     │
+    └─────────────────────────────────────────────────────────────────────┘
+                            </pre>
+                        </div>
+                    </section>
+                    
+                    <section class="whitepaper-section">
+                        <h2>§5. PageRank: Recursive Importance</h2>
+                        <p class="whitepaper-body">
+                            In 1998, Larry Page and Sergey Brin published a paper called "The Anatomy of a Large-Scale Hypertextual 
+                            Web Search Engine." In it, they described an algorithm for measuring the importance of web pages based on 
+                            who links to them. The key insight was <em>recursive</em>: a page is important if important pages link to 
+                            it. This circular definition, implemented as an iterative algorithm, became the foundation of Google.
+                        </p>
+                        <p class="whitepaper-body">
+                            We apply the same logic to the follow graph. An account is influential if influential accounts follow it. 
+                            Being followed by @pmarca contributes more to your score than being followed by someone @pmarca has never 
+                            heard of. Influence propagates through the network like heat through a metal.
+                        </p>
+                        
+                        <div class="visual-diagram">
+                            <pre class="ascii-art">
+    ┌─────────────────────────────────────────────────────────────────────┐
+    │                         PAGERANK PROPAGATION                        │
+    │                                                                     │
+    │     Iteration 0          Iteration 3          Iteration 10         │
+    │                                                                     │
+    │        ○                    ○                    ○                  │
+    │       ╱│╲                  ╱│╲                  ╱│╲                 │
+    │      ○ ○ ○                ◐ ◐ ○                ● ● ○                │
+    │      │ │ │                │ │ │                │ │ │                │
+    │      ○ ○ ○                ◐ ◐ ○                ● ◐ ○                │
+    │                                                                     │
+    │   All equal           Some brighter        Stable ranking          │
+    │                                                                     │
+    │         ○ = low score    ◐ = medium    ● = high score              │
+    └─────────────────────────────────────────────────────────────────────┘
+                            </pre>
+                        </div>
+                        
+                        <p class="whitepaper-body">
+                            The result is a ranking that differs from raw follower counts in important ways. A founder with 2,000 
+                            followers but followed by 15 top-tier VCs will rank higher than a crypto influencer with 200,000 followers 
+                            but no edges to the investor subgraph. PageRank sees through vanity metrics to reveal structural importance.
+                        </p>
+                    </section>
+                    
+                    <section class="whitepaper-section">
+                        <h2>§6. Community Detection: Finding Tribes</h2>
+                        <p class="whitepaper-body">
+                            Networks are not uniform. They have structure — clusters, communities, tribes. People in AI follow other 
+                            people in AI. Climate tech founders follow other climate tech founders. These clusters emerge not because 
+                            anyone designed them, but because attention flows preferentially along lines of shared interest.
+                        </p>
+                        <p class="whitepaper-body">
+                            The Louvain algorithm (and its faster cousin, Leiden) detect these communities by maximizing a quantity 
+                            called <em>modularity</em>: the degree to which the network divides into groups with dense internal 
+                            connections and sparse external ones. The algorithm knows nothing about AI or climate or defense — it 
+                            sees only edges. Yet the clusters it finds correspond remarkably well to the sectors we recognize.
+                        </p>
+                        
+                        <div class="visual-diagram">
+                            <pre class="ascii-art">
+    ┌─────────────────────────────────────────────────────────────────────┐
+    │                        COMMUNITY STRUCTURE                          │
+    │                                                                     │
+    │      ┌─────────────┐                    ┌─────────────┐             │
+    │      │   AI / ML   │                    │   Defense   │             │
+    │      │  ◯◯◯●◯◯◯    │    ◯───◯          │   ◯◯●◯◯     │             │
+    │      │  ◯◯◯◯◯◯     │     ╲ ╱           │   ◯◯◯◯      │             │
+    │      │  ◯◯●◯◯      │      ◯            │   ◯◯        │             │
+    │      └──────┬──────┘      │            └──────┬──────┘             │
+    │             │             │                   │                     │
+    │             └─────────────┼───────────────────┘                     │
+    │                           │                                         │
+    │      ┌─────────────┐      │            ┌─────────────┐             │
+    │      │   Climate   │      │            │   Crypto    │             │
+    │      │  ◯◯●◯◯      ├──────┘            │   ◯◯◯◯      │             │
+    │      │  ◯◯◯◯◯      │                   │   ◯●◯       │             │
+    │      │  ◯◯◯        │                   │   ◯◯        │             │
+    │      └─────────────┘                   └─────────────┘             │
+    │                                                                     │
+    │   Clusters emerge from connection density, not manual labels.       │
+    └─────────────────────────────────────────────────────────────────────┘
+                            </pre>
+                        </div>
+                        
+                        <p class="whitepaper-body">
+                            This is the magic of emergent structure. We tell the algorithm nothing about the world, and it discovers 
+                            the world anyway. It finds the climate cluster because climate people follow climate people, not because 
+                            we told it what climate is.
+                        </p>
+                    </section>
+                    
+                    <section class="whitepaper-section">
+                        <h2>§7. Momentum: The Derivative of Attention</h2>
+                        <p class="whitepaper-body">
+                            Position matters, but velocity matters more. An account with moderate PageRank but rapidly increasing 
+                            attention is more interesting than an established account with stable high PageRank. The former is 
+                            <em>becoming</em> something. The latter already <em>is</em>.
+                        </p>
+                        <p class="whitepaper-body">
+                            We track momentum by computing the rate of change in key metrics: new follows from core nodes, change in 
+                            PageRank, velocity of community integration. High momentum often precedes public events — funding 
+                            announcements, product launches, viral moments. The network knows before the news cycle.
+                        </p>
+                        
+                        <div class="visual-diagram">
+                            <pre class="ascii-art">
+    ┌─────────────────────────────────────────────────────────────────────┐
+    │                         MOMENTUM DETECTION                          │
+    │                                                                     │
+    │    Attention                                                        │
+    │    (follows)   ┃                                          ●        │
+    │         ▲      ┃                                       ●           │
+    │         │      ┃                                    ●              │
+    │         │      ┃                               ●                   │
+    │         │      ┃  ○────○────○────○────○────●                       │
+    │         │      ┃       Established Account (flat)                  │
+    │         │      ┃                                                    │
+    │         │      ┃  ○────○────○────●────●────●                       │
+    │         │      ┃       Rising Account (momentum!)                  │
+    │         │      ┃                                                    │
+    │         └──────╋────────────────────────────────────▶ Time         │
+    │                ┃                                                    │
+    │                                                                     │
+    │   The rising account will likely rank higher within 90 days.       │
+    └─────────────────────────────────────────────────────────────────────┘
+                            </pre>
+                        </div>
+                    </section>
+                    
+                    <!-- Part III: The Vision -->
+                    <section class="whitepaper-section whitepaper-part-header">
+                        <h2>Part III: The Vision</h2>
+                        <p class="whitepaper-body part-intro">
+                            "The best way to predict the future is to invent it."<br>
+                            — Alan Kay
+                        </p>
+                    </section>
+                    
+                    <section class="whitepaper-section">
+                        <h2>§8. On Seeing What Others Cannot</h2>
+                        <p class="whitepaper-body">
+                            There is a particular kind of advantage that comes not from knowing secret information, but from seeing 
+                            public information more clearly than others. The follow graph is public. Anyone can look. But almost 
+                            nobody does — not systematically, not algorithmically, not with the patience to let patterns emerge from 
+                            noise.
+                        </p>
+                        <p class="whitepaper-body">
+                            This is the opportunity. Not to know things others don't know, but to <em>see</em> things others don't 
+                            see. To map a territory that everyone inhabits but nobody has charted. To turn the firehose of social 
+                            data into a legible landscape.
+                        </p>
+                        <p class="whitepaper-body">
+                            Consider: every day, hundreds of interesting people are followed by sophisticated investors. These events 
+                            are public. They leave traces. But who is watching? Who is aggregating? Who is asking: <em>what does it 
+                            mean when 7 different firms all follow the same nuclear physicist in the same week?</em>
+                        </p>
+                        
+                        <div class="visual-break">
+                            <pre class="ascii-art">
+                     ╭──────────────────────────────────────────╮
+                     │                                          │
+                     │    "In a world of noise,                 │
+                     │     the ability to see signal            │
+                     │     is the ultimate edge."               │
+                     │                                          │
+                     ╰──────────────────────────────────────────╯
+                            </pre>
+                        </div>
+                    </section>
+                    
+                    <section class="whitepaper-section">
+                        <h2>§9. Use Cases</h2>
+                        <p class="whitepaper-body">
+                            The system enables several workflows that would be impossible manually:
+                        </p>
+                        
+                        <p class="whitepaper-body">
+                            <strong>9.1 Founder Discovery.</strong> Query the network for accounts matching specific criteria — 
+                            "nuclear AND engineer AND NOT investor" — ranked by PageRank. Find founders before they're findable. 
+                            Reach out when your email is one of three, not one of three hundred.
+                        </p>
+                        
+                        <p class="whitepaper-body">
+                            <strong>9.2 Sector Mapping.</strong> Identify everyone working in a space by examining who the known 
+                            players follow. If you have 10 known defense tech founders, their collective follow graph reveals 
+                            100 more you've never heard of.
+                        </p>
+                        
+                        <p class="whitepaper-body">
+                            <strong>9.3 Trend Detection.</strong> Monitor which clusters are gaining attention fastest. When 
+                            AI investors suddenly start following nuclear accounts, that's a signal. The network is 
+                            repositioning before the thesis is public.
+                        </p>
+                        
+                        <p class="whitepaper-body">
+                            <strong>9.4 Competitive Intelligence.</strong> Track which founders your competitors are following. 
+                            Map their attention before you're competing for the same deals.
+                        </p>
+                        
+                        <div class="query-examples">
+                            <div class="query-example">
+                                <code>"nuclear"</code>
+                                <span>→ Returns founders/operators with nuclear, fusion, fission in bio, ranked by PageRank</span>
+                            </div>
+                            <div class="query-example">
+                                <code>"defense" + Last 30 days</code>
+                                <span>→ Defense-related accounts that gained the most new VC followers this month</span>
+                            </div>
+                            <div class="query-example">
+                                <code>"AI safety" + Momentum</code>
+                                <span>→ AI safety researchers sorted by follower velocity (day-over-day growth)</span>
+                            </div>
+                            <div class="query-example">
+                                <code>"@pmarca AND @naval"</code>
+                                <span>→ Accounts followed by both, ranked by combined influence — finding shared conviction</span>
+                            </div>
+                        </div>
+                    </section>
+                    
+                    <section class="whitepaper-section">
+                        <h2>§10. The Ethos</h2>
+                        <p class="whitepaper-body">
+                            There is a philosophy embedded in this project, and it is worth making explicit.
+                        </p>
+                        <p class="whitepaper-body">
+                            First: <strong>technology should augment human judgment, not replace it</strong>. This system does not 
+                            tell you who to invest in or who to work with. It tells you who to <em>look at</em>. The final judgment 
+                            remains human — and must.
+                        </p>
+                        <p class="whitepaper-body">
+                            Second: <strong>networks are more honest than narratives</strong>. People say many things about what 
+                            they believe, what they're building, what they're interested in. But the follow graph reveals 
+                            <em>revealed preference</em> — what they actually pay attention to, stripped of performance and 
+                            posturing. There is a truth in the graph that press releases cannot contain.
+                        </p>
+                        <p class="whitepaper-body">
+                            Third: <strong>the edges matter more than the nodes</strong>. We are trained to think in terms of 
+                            individuals: this person is important, that person is influential. But in network analysis, the 
+                            connections between people are often more informative than the people themselves. A founder is defined 
+                            not just by who they are, but by who notices them, who validates them, who is willing to publicly 
+                            associate their attention with them.
+                        </p>
+                        <p class="whitepaper-body">
+                            Fourth: <strong>emergence should be respected, not designed</strong>. The clusters we find are not 
+                            categories we invented. They emerged from the data. This humility — this willingness to let the 
+                            network tell us what it contains, rather than imposing our preconceptions — is essential to seeing 
+                            clearly.
+                        </p>
+                    </section>
+                    
+                    <!-- Part IV: The Data -->
+                    <section class="whitepaper-section whitepaper-part-header">
+                        <h2>Part IV: Live System</h2>
+                        <p class="whitepaper-body part-intro">
+                            Current state of the network as of <span id="network-date-inline"></span>
+                        </p>
+                    </section>
+                    
+                    <section class="whitepaper-section">
+                        <h2>§11. Network Visualization</h2>
+                        <p class="whitepaper-body">
+                            The visualization below represents the ecosystem as a force-directed graph. Nodes are sized by 
+                            PageRank score. Colors indicate detected clusters. Spatial proximity reflects connection similarity — 
+                            accounts that follow similar people appear closer together.
+                        </p>
+                        
                         <div class="network-controls">
                             <input type="text" id="network-search" class="network-search" placeholder="Search: nuclear, AI, defense..." />
                             <select id="network-cluster-filter" class="network-filter">
@@ -204,29 +638,46 @@
                             </select>
                         </div>
                         
-                        <div id="network-graph" class="network-graph">
+                        <div id="network-graph" class="network-graph network-graph-large">
                             <div class="network-placeholder">
-                                <pre>
-┌─────────────────────────────────────────────────────────────────┐
-│                                                                 │
-│         ◯ AI/ML                    ◯ Defense                    │
-│       ◯◯◯◯◯                      ◯◯◯                           │
-│      ◯◯●◯◯◯                   ◯◯◯◯                             │
-│       ◯◯◯◯                                                      │
-│                  ◯◯ Climate                                     │
-│                ◯◯●◯◯       ◯ Crypto                            │
-│                 ◯◯◯      ◯◯◯◯                                  │
-│                                                                 │
-└─────────────────────────────────────────────────────────────────┘
+                                <pre class="ascii-art-large">
+ ┌──────────────────────────────────────────────────────────────────────────────────┐
+ │                                                                                  │
+ │                    ◯ ◯                                         ◯ ◯              │
+ │                   ◯◯◯◯◯                                       ◯◯●◯◯             │
+ │                  ◯◯◯●◯◯◯           AI / ML                   ◯◯◯◯◯              │
+ │                   ◯◯◯◯◯         ◯◯◯◯◯◯◯◯◯◯◯                   ◯◯◯               │
+ │                    ◯◯◯         ◯◯◯◯◯◯●◯◯◯◯◯◯◯                   │               │
+ │                     │         ◯◯◯◯◯◯◯◯◯◯◯◯◯◯◯               Defense             │
+ │                     │          ◯◯◯◯◯●◯◯◯◯◯◯◯                    │               │
+ │        Biotech     ─┼───────────◯◯◯◯◯◯◯◯◯◯───────────────────────┤               │
+ │       ◯◯◯◯◯◯       │            ◯◯◯◯◯◯◯                         │               │
+ │      ◯◯◯●◯◯◯       │                                             │               │
+ │       ◯◯◯◯◯        │                                             │               │
+ │                    │           ◯◯◯◯                              │               │
+ │                    │         ◯◯◯◯●◯◯◯                            │               │
+ │                    │        ◯◯◯◯◯◯◯◯◯◯          ◯◯◯◯◯            │               │
+ │                    │         ◯◯◯◯◯◯◯◯          ◯◯◯●◯◯◯           │               │
+ │                    │          Climate           ◯◯◯◯◯◯           │               │
+ │                    │                            ◯◯◯◯             │               │
+ │                    │                            Crypto           │               │
+ │                    │                                             │               │
+ │                    └─────────────────────────────────────────────┘               │
+ │                                                                                  │
+ └──────────────────────────────────────────────────────────────────────────────────┘
                                 </pre>
-                                <p class="network-legend">● = high PageRank (influencer) · ◯ = normal nodes · Clusters positioned by similarity</p>
-                                <p class="network-status">Loading network data...</p>
+                                <p class="network-legend">● = high PageRank (influencer) · ◯ = nodes · Position = connection similarity</p>
                             </div>
                         </div>
                     </section>
                     
                     <section class="whitepaper-section">
-                        <h2>§3. Top Influencers by PageRank</h2>
+                        <h2>§12. Influence Rankings</h2>
+                        <p class="whitepaper-body">
+                            Top accounts by PageRank score. Unlike raw follower counts, PageRank weights <em>who</em> follows you. 
+                            Being followed by @pmarca contributes more to your score than being followed by a random account. 
+                            This is influence as the network sees it.
+                        </p>
                         <div id="network-top-influencers" class="network-table">
                             <table>
                                 <thead>
@@ -246,21 +697,117 @@
                     </section>
                     
                     <section class="whitepaper-section">
-                        <h2>§4. Detected Clusters</h2>
+                        <h2>§13. Detected Communities</h2>
+                        <p class="whitepaper-body">
+                            Communities detected via Louvain algorithm. These clusters emerge from connection patterns, not manual 
+                            labels — accounts that follow similar people cluster together. The algorithm sees only edges; yet the 
+                            communities it finds correspond to sectors we recognize.
+                        </p>
                         <div id="network-clusters" class="cluster-grid">
-                            <p class="loading">Running community detection...</p>
+                            <div class="cluster-card">
+                                <h3>AI / ML</h3>
+                                <div class="cluster-count">—</div>
+                                <div class="cluster-keywords">artificial intelligence, machine learning, LLMs, neural networks</div>
+                            </div>
+                            <div class="cluster-card">
+                                <h3>Climate Tech</h3>
+                                <div class="cluster-count">—</div>
+                                <div class="cluster-keywords">climate, energy, nuclear, fusion, solar, sustainability</div>
+                            </div>
+                            <div class="cluster-card">
+                                <h3>Defense Tech</h3>
+                                <div class="cluster-count">—</div>
+                                <div class="cluster-keywords">defense, aerospace, gov tech, national security</div>
+                            </div>
+                            <div class="cluster-card">
+                                <h3>Crypto / Web3</h3>
+                                <div class="cluster-count">—</div>
+                                <div class="cluster-keywords">crypto, blockchain, DeFi, web3, tokens</div>
+                            </div>
                         </div>
                     </section>
                     
                     <section class="whitepaper-section">
-                        <h2>§5. Trending This Period</h2>
+                        <h2>§14. Momentum Leaders</h2>
+                        <p class="whitepaper-body">
+                            Accounts with highest attention velocity — those gaining VC follows fastest relative to their baseline.
+                            High momentum often precedes funding announcements, product launches, or viral moments. These are the 
+                            accounts that are <em>becoming</em> important.
+                        </p>
                         <div id="network-trending" class="trending-list">
-                            <p class="loading">Calculating momentum...</p>
+                            <p class="loading">Momentum tracking requires historical data. Collecting...</p>
+                        </div>
+                    </section>
+                    
+                    <!-- Part V: The Future -->
+                    <section class="whitepaper-section whitepaper-part-header">
+                        <h2>Part V: What Comes Next</h2>
+                        <p class="whitepaper-body part-intro">
+                            "The future is already here — it's just not evenly distributed."<br>
+                            — William Gibson
+                        </p>
+                    </section>
+                    
+                    <section class="whitepaper-section">
+                        <h2>§15. Roadmap</h2>
+                        <p class="whitepaper-body">
+                            The system as it exists today is a foundation. Several enhancements are planned:
+                        </p>
+                        <ul class="whitepaper-list">
+                            <li><strong>LLM Integration</strong> — Analyze recent tweets + bio to auto-classify accounts (founder vs operator vs investor) and extract interests, investment thesis, and current priorities. The model reads; we search.</li>
+                            <li><strong>Real-time Alerts</strong> — Notify when 3+ core nodes follow the same account within 24 hours. Convergence of attention is signal; speed is competitive advantage.</li>
+                            <li><strong>Predictive Scoring</strong> — Identify accounts likely to raise funding in next 90 days based on attention patterns. The network knows before the press release.</li>
+                            <li><strong>Graph Neural Networks</strong> — Move beyond PageRank to learned embeddings. Let the network teach us features we haven't thought to look for.</li>
+                            <li><strong>Multi-platform Integration</strong> — Extend sensing beyond Twitter to LinkedIn, GitHub, conference attendance, academic citations. The more signals, the clearer the picture.</li>
+                        </ul>
+                    </section>
+                    
+                    <section class="whitepaper-section">
+                        <h2>§16. Closing Thoughts</h2>
+                        <p class="whitepaper-body">
+                            We began with a simple observation: attention is signal. Where sophisticated actors pay attention, 
+                            information exists. Where attention converges, alpha hides.
+                        </p>
+                        <p class="whitepaper-body">
+                            The technology we've described is not magic. It is applied network science — algorithms that have 
+                            powered web search and social networks for decades, repurposed for a new domain. The magic, if there 
+                            is any, lies in the application. In the willingness to take public information seriously. In the 
+                            patience to let patterns emerge from noise.
+                        </p>
+                        <p class="whitepaper-body">
+                            The follow graph is a map of a living, breathing ecosystem. It changes every day. New nodes appear. 
+                            Old edges dissolve. Clusters form and reform. Attention flows like water, always seeking the lowest 
+                            ground — which is to say, the most interesting ground.
+                        </p>
+                        <p class="whitepaper-body">
+                            Our job is to watch. To map. To see.
+                        </p>
+                        <p class="whitepaper-body">
+                            Because attention is all you need.
+                        </p>
+                        
+                        <div class="visual-break final-visual">
+                            <pre class="ascii-art">
+                     ╭──────────────────────────────────────────╮
+                     │                                          │
+                     │              ◯                           │
+                     │            ╱ │ ╲                         │
+                     │          ◯───●───◯                       │
+                     │        ╱ │ ╲ │ ╱ │ ╲                     │
+                     │      ◯───◯───◯───◯───◯                   │
+                     │                                          │
+                     │       The network is the territory.      │
+                     │       The map is what we build.          │
+                     │                                          │
+                     ╰──────────────────────────────────────────╯
+                            </pre>
                         </div>
                     </section>
                     
                     <footer class="whitepaper-footer">
-                        <p>Attention Is All You Need • Network Intelligence</p>
+                        <p>Attention Is All You Need</p>
+                        <p class="whitepaper-footer-sub">A Network Intelligence System for Ecosystem Discovery</p>
+                        <p class="whitepaper-footer-sub">Thomas Shehadeh • <span id="network-date"></span></p>
                     </footer>
                 </div>
             </div>

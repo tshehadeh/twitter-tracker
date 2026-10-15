@@ -1243,11 +1243,19 @@ async function showNetworkView() {
     showView('network');
     
     // Set current date
-    elements.networkDate.textContent = new Date().toLocaleDateString('en-US', { 
+    const dateStr = new Date().toLocaleDateString('en-US', { 
         year: 'numeric', 
         month: 'long', 
         day: 'numeric' 
     });
+    if (elements.networkDate) {
+        elements.networkDate.textContent = dateStr;
+    }
+    // Also set inline date in Part IV
+    const inlineDate = document.getElementById('network-date-inline');
+    if (inlineDate) {
+        inlineDate.textContent = dateStr;
+    }
     
     // Load network data
     await loadNetworkData();
@@ -1258,8 +1266,17 @@ async function loadNetworkData() {
         // Fetch network stats from API
         const data = await api('/network/stats');
         
-        elements.networkNodeCount.textContent = data.nodeCount || 0;
-        elements.networkEdgeCount.textContent = data.edgeCount || 0;
+        const nodeCount = data.nodeCount || 0;
+        const edgeCount = data.edgeCount || 0;
+        
+        elements.networkNodeCount.textContent = nodeCount.toLocaleString();
+        elements.networkEdgeCount.textContent = edgeCount.toLocaleString();
+        
+        // Also update architecture diagram counts
+        const archNodes = document.getElementById('arch-nodes');
+        const archEdges = document.getElementById('arch-edges');
+        if (archNodes) archNodes.textContent = nodeCount.toLocaleString();
+        if (archEdges) archEdges.textContent = edgeCount.toLocaleString();
         
         // Populate top influencers
         if (data.topInfluencers && data.topInfluencers.length > 0) {
