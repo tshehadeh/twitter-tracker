@@ -5,7 +5,9 @@ let currentNewFollow = null;
 let currentView = 'welcome';
 let currentDate = null; // For date-based new follows filtering
 let currentFirm = null; // For firm-based new follows filtering
+let currentMember = null; // For filtering by specific firm member
 let firms = []; // List of available firms
+let firmMembers = []; // List of members for current firm
 let groupedNewFollows = []; // List of grouped follows for current date
 let currentGroupedIndex = 0; // Current position in grouped list
 
@@ -82,6 +84,14 @@ const elements = {
     nfBtnTrack: document.getElementById('nf-btn-track'),
     nfBtnPass: document.getElementById('nf-btn-pass'),
     nfBackToHome: document.getElementById('nf-back-to-home'),
+    
+    // Firm sidebar elements
+    firmSidebar: document.getElementById('firm-sidebar'),
+    sidebarFirmName: document.getElementById('sidebar-firm-name'),
+    sidebarShowAll: document.getElementById('sidebar-show-all'),
+    firmMembersList: document.getElementById('firm-members-list'),
+    addMemberInput: document.getElementById('add-member-input'),
+    addMemberBtn: document.getElementById('add-member-btn'),
 };
 
 // View Management
@@ -433,14 +443,21 @@ function renderFirmTabs() {
 // Select a firm tab
 async function selectFirm(firmId) {
     currentFirm = firmId;
+    currentMember = null; // Reset member filter
     currentDate = null; // Reset date when changing firm
     renderFirmTabs();
     showNfLoading(true);
     
     if (firmId) {
+        // Show sidebar and load members
+        elements.firmSidebar.style.display = 'block';
+        await loadFirmMembers(firmId);
         // Load firm-specific follows
         await loadFirmNewFollows(firmId);
     } else {
+        // Hide sidebar
+        elements.firmSidebar.style.display = 'none';
+        firmMembers = [];
         // Load all follows (date-based)
         const { byDate } = await loadNewFollowsStats();
         if (byDate && byDate.length > 0) {
@@ -452,13 +469,163 @@ async function selectFirm(firmId) {
     }
 }
 
+// Load firm members for sidebar
+async function loadFirmMembers(firmId) {
+    try {
+        const { members, firm } = await api(`/firms/${firmId}/members`);
+        firmMembers = members || [];
+        elements.sidebarFirmName.textContent = firm?.name || firmId;
+        renderFirmMembers();
+    } catch (error) {
+        console.error('Error loading firm members:', error);
+        firmMembers = [];
+    }
+}
+
+// Render firm members in sidebar
+function renderFirmMembers() {
+    // Sort by hit rate (track_count / total)
+    const sorted = [...firmMembers].sort((a, b) => {
+        const aTotal = (a.track_count || 0) + (a.pass_count || 0);
+        const bTotal = (b.track_count || 0) + (b.pass_count || 0);
+        const aRate = aTotal > 0 ? (a.track_count || 0) / aTotal : 0;
+        const bRate = bTotal > 0 ? (b.track_count || 0) / bTotal : 0;
+        return bRate - aRate; // Higher rate first
+    });
+    
+    elements.firmMembersList.innerHTML = sorted.map(member => {
+        const trackCount = member.track_count || 0;
+        const passCount = member.pass_count || 0;
+        const total = trackCount + passCount;
+        const hitRate = total > 0 ? Math.round((trackCount / total) * 100) : 0;
+        const hitRateClass = hitRate >= 50 ? '' : 'low';
+        const isSelected = currentMember === member.id;
+        
+        return `
+            <div class="member-item ${isSelected ? 'selected' : ''}" data-member-id="${member.id}">
+                <div class="member-header">
+                    <span class="member-username">@${member.username}</span>
+                    <span class="member-stats">
+                        ${total > 0 ? `<span class="hit-rate ${hitRateClass}">${hitRate}%</span> (${trackCount}/${total})` : 'No data'}
+                    </span>
+                    <button class="member-remove" data-member-id="${member.id}" data-username="${member.username}" title="Remove from firm">×</button>
+                </div>
+                <div class="member-bio">${member.bio || member.display_name || 'No bio'}</div>
+                <a class="member-link" href="https://x.com/${member.username}" target="_blank" onclick="event.stopPropagation()">x.com/${member.username}</a>
+            </div>
+        `;
+    }).join('');
+    
+    // Update show all button state
+    elements.sidebarShowAll.classList.toggle('active', !currentMember);
+    
+    // Add click handlers for selecting members
+    elements.firmMembersList.querySelectorAll('.member-item').forEach(item => {
+        item.addEventListener('click', (e) => {
+            // Don't select if clicking remove button
+            if (e.target.classList.contains('member-remove')) return;
+            selectMember(parseInt(item.dataset.memberId));
+        });
+    });
+    
+    // Add click handlers for remove buttons
+    elements.firmMembersList.querySelectorAll('.member-remove').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            removeMemberFromFirm(parseInt(btn.dataset.memberId), btn.dataset.username);
+        });
+    });
+}
+
+// Select a specific member to filter by
+async function selectMember(memberId) {
+    if (currentMember === memberId) {
+        // Toggle off - show all
+        currentMember = null;
+    } else {
+        currentMember = memberId;
+    }
+    renderFirmMembers();
+    showNfLoading(true);
+    await loadFirmNewFollows(currentFirm);
+}
+
+// Show all firm members (clear filter)
+async function showAllFirmMembers() {
+    currentMember = null;
+    renderFirmMembers();
+    showNfLoading(true);
+    await loadFirmNewFollows(currentFirm);
+}
+
+// Remove a member from the firm
+async function removeMemberFromFirm(memberId, username) {
+    if (!confirm(`Remove @${username} from this firm? They will no longer appear in this firm's feed.`)) {
+        return;
+    }
+    
+    try {
+        await api(`/firms/${currentFirm}/members/${memberId}`, { method: 'DELETE' });
+        
+        // Remove from local list and re-render
+        firmMembers = firmMembers.filter(m => m.id !== memberId);
+        renderFirmMembers();
+        
+        // If we were filtering by this member, clear filter
+        if (currentMember === memberId) {
+            currentMember = null;
+            showNfLoading(true);
+            await loadFirmNewFollows(currentFirm);
+        }
+        
+        // Reload firms to update counts
+        await loadFirms();
+        renderFirmTabs();
+    } catch (error) {
+        console.error('Error removing member:', error);
+        alert('Failed to remove member');
+    }
+}
+
+// Add a member to the firm by username
+async function addMemberToFirm(username) {
+    if (!username || !currentFirm) return;
+    
+    try {
+        await api(`/firms/${currentFirm}/members`, {
+            method: 'POST',
+            body: { username }
+        });
+        
+        // Reload members
+        await loadFirmMembers(currentFirm);
+        
+        // Reload firms to update counts
+        await loadFirms();
+        renderFirmTabs();
+    } catch (error) {
+        console.error('Error adding member:', error);
+        alert('Failed to add member. Make sure the username exists in your core nodes.');
+    }
+}
+
 // Load new follows for a specific firm
 async function loadFirmNewFollows(firmId) {
     try {
-        const { newFollows, stats, firm } = await api(`/new-follows/firm/${firmId}`);
+        // Build URL with optional member filter
+        let url = `/new-follows/firm/${firmId}`;
+        if (currentMember) {
+            url += `?member=${currentMember}`;
+        }
+        const { newFollows, stats, firm } = await api(url);
         
-        // Hide date tabs when viewing firm, show member count
-        elements.dateTabs.innerHTML = `<span style="color: var(--text-muted); font-size: 12px;">${firm.name} • ${firm.memberCount || 0} accounts tracked</span>`;
+        // Show member name if filtered, otherwise show firm info
+        if (currentMember) {
+            const member = firmMembers.find(m => m.id === currentMember);
+            elements.dateTabs.innerHTML = `<span style="color: var(--text-muted); font-size: 12px;">${firm.name} → @${member?.username || 'member'}</span>`;
+        } else {
+            elements.dateTabs.innerHTML = `<span style="color: var(--text-muted); font-size: 12px;">${firm.name} • ${firm.memberCount || 0} accounts tracked</span>`;
+        }
         
         // Update stats
         elements.nfUnreviewedCount.textContent = stats.unreviewed || 0;
@@ -872,6 +1039,25 @@ elements.nfBackToHome.addEventListener('click', () => showView('welcome'));
 elements.nfBtnOutbound.addEventListener('click', () => categorizeNewFollow('outbound'));
 elements.nfBtnTrack.addEventListener('click', () => categorizeNewFollow('track'));
 elements.nfBtnPass.addEventListener('click', () => categorizeNewFollow('pass'));
+
+// Firm sidebar event listeners
+elements.sidebarShowAll.addEventListener('click', showAllFirmMembers);
+elements.addMemberBtn.addEventListener('click', () => {
+    const username = elements.addMemberInput.value.trim().replace('@', '');
+    if (username) {
+        addMemberToFirm(username);
+        elements.addMemberInput.value = '';
+    }
+});
+elements.addMemberInput.addEventListener('keypress', (e) => {
+    if (e.key === 'Enter') {
+        const username = elements.addMemberInput.value.trim().replace('@', '');
+        if (username) {
+            addMemberToFirm(username);
+            elements.addMemberInput.value = '';
+        }
+    }
+});
 
 // Keyboard shortcuts
 document.addEventListener('keydown', (e) => {

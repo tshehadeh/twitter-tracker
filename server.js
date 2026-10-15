@@ -321,9 +321,26 @@ app.post('/api/firms/:firmId/members', (req, res) => {
     }
 });
 
-// API: Get new follows for a specific firm
+// API: Remove a member from a firm (set firm to null)
+app.delete('/api/firms/:firmId/members/:memberId', (req, res) => {
+    const { firmId, memberId } = req.params;
+    
+    if (!FIRMS[firmId]) {
+        return res.status(404).json({ error: 'Firm not found' });
+    }
+    
+    try {
+        db.removeCoreNodeFromFirm(parseInt(memberId));
+        res.json({ success: true });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// API: Get new follows for a specific firm (with optional member filter)
 app.get('/api/new-follows/firm/:firmId', (req, res) => {
     const { firmId } = req.params;
+    const { member } = req.query; // Optional core_node_id to filter by
     const firm = FIRMS[firmId];
     
     if (!firm) {
@@ -331,12 +348,25 @@ app.get('/api/new-follows/firm/:firmId', (req, res) => {
     }
     
     try {
-        const newFollows = db.getNewFollowsByFirm(firmId);
+        let newFollows;
+        if (member) {
+            // Filter by specific member
+            newFollows = db.getNewFollowsByMember(parseInt(member));
+        } else {
+            // Get all for firm
+            newFollows = db.getNewFollowsByFirm(firmId);
+        }
+        
+        const members = db.getCoreNodesByFirm(firmId);
         const stats = { 
             total: newFollows.length,
             unreviewed: newFollows.filter(nf => !nf.reviewed).length 
         };
-        res.json({ firm: { id: firmId, ...firm }, newFollows, stats });
+        res.json({ 
+            firm: { id: firmId, ...firm, memberCount: members.length }, 
+            newFollows, 
+            stats 
+        });
     } catch (error) {
         res.status(500).json({ error: error.message });
     }

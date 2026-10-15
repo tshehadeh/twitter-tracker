@@ -174,9 +174,26 @@
                     </div>
                 </div>
                 
-                <!-- New Follow Card Container -->
-                <div class="card-container">
-                    <div id="nf-card" class="user-card new-follow-card">
+                <!-- Main Content with Optional Sidebar -->
+                <div class="content-with-sidebar">
+                    <!-- Firm Members Sidebar (hidden by default) -->
+                    <div id="firm-sidebar" class="firm-sidebar" style="display: none;">
+                        <div class="sidebar-header">
+                            <h3 id="sidebar-firm-name">Members</h3>
+                            <button id="sidebar-show-all" class="sidebar-all-btn">Show All</button>
+                        </div>
+                        <div id="firm-members-list" class="firm-members-list">
+                            <!-- Members populated by JS -->
+                        </div>
+                        <div class="sidebar-add-member">
+                            <input type="text" id="add-member-input" placeholder="@username" />
+                            <button id="add-member-btn">Add</button>
+                        </div>
+                    </div>
+                    
+                    <!-- New Follow Card Container -->
+                    <div class="card-container">
+                        <div id="nf-card" class="user-card new-follow-card">
                         <div class="followed-by-header">
                             <div class="followed-by-text">
                                 <span id="nf-core-node">@username started following</span>
@@ -215,6 +232,7 @@
                     <div id="nf-loading-card" class="loading-card" style="display: none;">
                         <div class="spinner"></div>
                         <p>Loading...</p>
+                    </div>
                     </div>
                 </div>
                 

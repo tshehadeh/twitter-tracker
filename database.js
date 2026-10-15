@@ -614,6 +614,26 @@ const dbFunctions = {
         `).all(firmId);
     },
     
+    // Get new follows for a specific member (core_node_id)
+    getNewFollowsByMember(coreNodeId) {
+        return db.prepare(`
+            SELECT nf.*, 
+                   cn.username as core_node_username, cn.display_name as core_node_display_name,
+                   cn.firm as core_node_firm,
+                   u.username as followed_username, u.display_name as followed_display_name,
+                   u.bio as followed_bio, u.followers_count as followed_followers,
+                   u.following_count as followed_following, u.profile_image_url as followed_avatar,
+                   u.verified as followed_verified, u.id as followed_user_db_id,
+                   c.category as existing_category
+            FROM new_follows nf
+            JOIN core_nodes cn ON nf.core_node_id = cn.id
+            JOIN users u ON nf.followed_user_id = u.id
+            LEFT JOIN categorizations c ON u.id = c.user_id
+            WHERE nf.core_node_id = ?
+            ORDER BY nf.detected_at DESC
+        `).all(coreNodeId);
+    },
+    
     // Get next unreviewed new follow for a firm
     getNextNewFollowByFirm(firmId) {
         return db.prepare(`
@@ -666,6 +686,11 @@ const dbFunctions = {
     // Assign core node to firm by username
     assignCoreNodeToFirmByUsername(username, firmId) {
         return db.prepare(`UPDATE core_nodes SET firm = ? WHERE LOWER(username) = LOWER(?)`).run(firmId, username);
+    },
+    
+    // Remove core node from firm (set firm to null)
+    removeCoreNodeFromFirm(coreNodeId) {
+        return db.prepare(`UPDATE core_nodes SET firm = NULL WHERE id = ?`).run(coreNodeId);
     },
     
     // Add a new core node with firm
