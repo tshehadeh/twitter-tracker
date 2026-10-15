@@ -485,8 +485,11 @@ async function loadFirmNewFollows(firmId) {
                 });
             }
             const user = userMap.get(key);
-            user.followed_by_usernames.push(nf.core_node_username);
-            user.follow_count++;
+            // Dedupe - only add if not already in list
+            if (!user.followed_by_usernames.includes(nf.core_node_username)) {
+                user.followed_by_usernames.push(nf.core_node_username);
+                user.follow_count++;
+            }
         });
         
         // Convert to array and sort by follow count
