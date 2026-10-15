@@ -102,6 +102,12 @@ async function getUserByUsername(username) {
     let result = data.data.user.result;
     result.legacy.id_str = result.rest_id;
     
+    // Extract expanded URL from entities
+    const expandedUrl = result.legacy.entities?.url?.urls?.[0]?.expanded_url;
+    if (expandedUrl) {
+        result.legacy.url = expandedUrl;
+    }
+    
     return result.legacy;
 }
 
@@ -180,6 +186,11 @@ function getFollowing(id, cursor) {
                         if (user.is_blue_verified && !user.legacy.verified_type) {
                             user.legacy.verified = true;
                             user.legacy.verified_type = "Blue";
+                        }
+                        // Extract expanded URL from entities (the t.co link is in legacy.url)
+                        const expandedUrl = user.legacy.entities?.url?.urls?.[0]?.expanded_url;
+                        if (expandedUrl) {
+                            user.legacy.url = expandedUrl;
                         }
                         return user.legacy;
                     })
