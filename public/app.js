@@ -93,6 +93,11 @@ const elements = {
     addMemberInput: document.getElementById('add-member-input'),
     addMemberBtn: document.getElementById('add-member-btn'),
     
+    // Tracked by panel elements
+    trackedByPanel: document.getElementById('tracked-by-panel'),
+    trackedByCount: document.getElementById('tracked-by-count'),
+    trackedByList: document.getElementById('tracked-by-list'),
+    
     // Theme toggle
     themeToggle: document.getElementById('theme-toggle'),
 };
@@ -843,21 +848,11 @@ async function displayGroupedNewFollow(gf) {
         ? gf.profile_image_url.replace('_normal', '_200x200')
         : '';
     
-    // Format "followed by" text
+    // Format "followed by" text - simplified since we have the panel now
     const usernames = gf.followed_by_usernames || [];
-    let followedByText;
-    if (usernames.length === 1) {
-        followedByText = `@${usernames[0]} started following`;
-    } else if (usernames.length === 2) {
-        followedByText = `@${usernames[0]} and @${usernames[1]} started following`;
-    } else if (usernames.length <= 4) {
-        const lastUser = usernames[usernames.length - 1];
-        const otherUsers = usernames.slice(0, -1).map(u => `@${u}`).join(', ');
-        followedByText = `${otherUsers}, and @${lastUser} started following`;
-    } else {
-        const shown = usernames.slice(0, 3).map(u => `@${u}`).join(', ');
-        followedByText = `${shown}, +${usernames.length - 3} more started following`;
-    }
+    const followedByText = usernames.length === 1 
+        ? `@${usernames[0]} started following`
+        : `${usernames.length} people started following`;
     
     // Update the header with follow count badge
     const badgeClass = gf.follow_count >= 3 ? 'follow-count-badge high' : 'follow-count-badge';
@@ -868,8 +863,8 @@ async function displayGroupedNewFollow(gf) {
         elements.nfCoreNode.innerHTML += ` <span class="category-badge ${gf.existing_category}">(${gf.existing_category})</span>`;
     }
     
-    // Fetch and display core node stats
-    await displayCoreNodeStats(usernames);
+    // Populate the tracked-by panel
+    await displayTrackedByPanel(usernames);
     
     elements.nfAvatar.src = avatarUrl;
     elements.nfAvatar.onerror = () => {
@@ -886,6 +881,63 @@ async function displayGroupedNewFollow(gf) {
     
     // Store current for categorization
     currentNewFollow = gf;
+}
+
+// Display tracked-by panel with core nodes who followed this person
+async function displayTrackedByPanel(usernames) {
+    if (!usernames || usernames.length === 0) {
+        elements.trackedByCount.textContent = '0';
+        elements.trackedByList.innerHTML = '<p style="padding: 16px; color: var(--text-muted); font-size: 12px;">No trackers</p>';
+        return;
+    }
+    
+    elements.trackedByCount.textContent = usernames.length;
+    elements.trackedByList.innerHTML = '<div style="padding: 16px; text-align: center;"><div class="spinner"></div></div>';
+    
+    // Fetch stats for each core node
+    const trackers = [];
+    for (const username of usernames) {
+        try {
+            const { coreNode } = await api(`/core-nodes/username/${username}`);
+            if (coreNode) {
+                trackers.push(coreNode);
+            }
+        } catch (error) {
+            // If API fails, just show username without stats
+            trackers.push({ username, track_count: 0, pass_count: 0 });
+        }
+    }
+    
+    // Sort by track rate (higher is better)
+    trackers.sort((a, b) => {
+        const aTotal = (a.track_count || 0) + (a.pass_count || 0);
+        const bTotal = (b.track_count || 0) + (b.pass_count || 0);
+        const aRate = aTotal > 0 ? (a.track_count || 0) / aTotal : 0;
+        const bRate = bTotal > 0 ? (b.track_count || 0) / bTotal : 0;
+        return bRate - aRate;
+    });
+    
+    // Render trackers
+    elements.trackedByList.innerHTML = trackers.map(tracker => {
+        const trackCount = tracker.track_count || 0;
+        const passCount = tracker.pass_count || 0;
+        const total = trackCount + passCount;
+        const trackRate = total > 0 ? Math.round((trackCount / total) * 100) : 0;
+        const rateClass = total > 0 ? (trackRate >= 50 ? 'good' : 'bad') : '';
+        
+        return `
+            <div class="tracker-item">
+                <div class="tracker-header">
+                    <span class="tracker-username">
+                        <a href="https://x.com/${tracker.username}" target="_blank">@${tracker.username}</a>
+                    </span>
+                    ${total > 0 ? `<span class="tracker-rate ${rateClass}">${trackRate}%</span>` : ''}
+                </div>
+                <div class="tracker-bio">${tracker.bio || tracker.display_name || 'No bio'}</div>
+                <a class="tracker-link" href="https://x.com/${tracker.username}" target="_blank">View profile →</a>
+            </div>
+        `;
+    }).join('');
 }
 
 // Display core node stats badges

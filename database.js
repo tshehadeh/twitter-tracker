@@ -755,18 +755,21 @@ const dbFunctions = {
         `).get(coreNodeId);
     },
     
-    // Get core node by username
+    // Get core node by username (with bio from users table)
     getCoreNodeByUsername(username) {
         return db.prepare(`
-            SELECT *, 
-                   (outbound_count + track_count + pass_count) as total_categorized,
-                   CASE WHEN (outbound_count + track_count + pass_count) > 0 
-                        THEN ROUND(100.0 * track_count / (outbound_count + track_count + pass_count), 1)
+            SELECT cn.*, 
+                   u.bio,
+                   (cn.outbound_count + cn.track_count + cn.pass_count) as total_categorized,
+                   CASE WHEN (cn.outbound_count + cn.track_count + cn.pass_count) > 0 
+                        THEN ROUND(100.0 * cn.track_count / (cn.outbound_count + cn.track_count + cn.pass_count), 1)
                         ELSE 0 END as track_rate,
-                   CASE WHEN (outbound_count + track_count + pass_count) > 0 
-                        THEN ROUND(100.0 * pass_count / (outbound_count + track_count + pass_count), 1)
+                   CASE WHEN (cn.outbound_count + cn.track_count + cn.pass_count) > 0 
+                        THEN ROUND(100.0 * cn.pass_count / (cn.outbound_count + cn.track_count + cn.pass_count), 1)
                         ELSE 0 END as pass_rate
-            FROM core_nodes WHERE LOWER(username) = LOWER(?)
+            FROM core_nodes cn
+            LEFT JOIN users u ON cn.twitter_id = u.twitter_id
+            WHERE LOWER(cn.username) = LOWER(?)
         `).get(username);
     },
     

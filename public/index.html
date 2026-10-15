@@ -204,37 +204,48 @@
                         </div>
                     </div>
                     
-                    <!-- New Follow Card Container -->
-                    <div class="card-container">
-                        <div id="nf-card" class="user-card new-follow-card">
-                        <div class="followed-by-header">
-                            <div class="followed-by-text">
-                                <span id="nf-core-node">@username started following</span>
-                            </div>
-                            <div id="nf-core-node-stats" class="core-node-stats">
-                                <!-- Core node hit rates shown here -->
+                    <!-- New Follow Card Container with Tracked By Panel -->
+                    <div class="card-with-trackers">
+                        <div class="card-container">
+                            <div id="nf-card" class="user-card new-follow-card">
+                                <div class="followed-by-header">
+                                    <div class="followed-by-text">
+                                        <span id="nf-core-node">@username started following</span>
+                                    </div>
+                                </div>
+                                <div class="card-header">
+                                    <img id="nf-avatar" class="card-avatar" src="" alt="">
+                                    <div class="card-names">
+                                        <span id="nf-display-name" class="card-display-name"></span>
+                                        <span id="nf-username" class="card-username"></span>
+                                    </div>
+                                    <span id="nf-verified" class="verified-badge" style="display: none;">✓</span>
+                                </div>
+                                <p id="nf-bio" class="card-bio"></p>
+                                <div class="card-stats">
+                                    <div class="stat">
+                                        <span class="stat-value" id="nf-followers">0</span>
+                                        <span class="stat-label">Followers</span>
+                                    </div>
+                                    <div class="stat">
+                                        <span class="stat-value" id="nf-following">0</span>
+                                        <span class="stat-label">Following</span>
+                                    </div>
+                                </div>
+                                <a id="nf-link" class="card-link" href="#" target="_blank">View Profile</a>
                             </div>
                         </div>
-                        <div class="card-header">
-                            <img id="nf-avatar" class="card-avatar" src="" alt="">
-                            <div class="card-names">
-                                <span id="nf-display-name" class="card-display-name"></span>
-                                <span id="nf-username" class="card-username"></span>
+                        
+                        <!-- Tracked By Panel -->
+                        <div id="tracked-by-panel" class="tracked-by-panel">
+                            <div class="tracked-by-header">
+                                <h3>Tracked By</h3>
+                                <span id="tracked-by-count" class="tracked-by-count">0</span>
                             </div>
-                            <span id="nf-verified" class="verified-badge" style="display: none;">✓</span>
-                        </div>
-                        <p id="nf-bio" class="card-bio"></p>
-                        <div class="card-stats">
-                            <div class="stat">
-                                <span class="stat-value" id="nf-followers">0</span>
-                                <span class="stat-label">Followers</span>
-                            </div>
-                            <div class="stat">
-                                <span class="stat-value" id="nf-following">0</span>
-                                <span class="stat-label">Following</span>
+                            <div id="tracked-by-list" class="tracked-by-list">
+                                <!-- Populated by JS -->
                             </div>
                         </div>
-                        <a id="nf-link" class="card-link" href="#" target="_blank">View Profile</a>
                     </div>
                     
                     <div id="nf-empty-card" class="empty-card" style="display: none;">

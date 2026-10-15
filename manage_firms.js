@@ -21,7 +21,8 @@ const FIRMS = {
     'sequoia': {
         name: 'Sequoia',
         mainAccounts: ['sequoia'],
-        bioKeywords: ['sequoia', 'sequoiacap', '@sequoia', 'sequoia capital'],
+        // "sequoia" uses word boundaries - won't match random tree mentions
+        bioKeywords: ['sequoia', '@sequoia', 'sequoia capital', 'sequoiacap'],
     },
     'founders': {
         name: 'Founders Fund',
@@ -36,12 +37,13 @@ const FIRMS = {
     'lightspeed': {
         name: 'Lightspeed',
         mainAccounts: ['lightspeedvp'],
-        bioKeywords: ['lightspeed', 'lightspeedvp', 'lsvp', '@lightspeed', 'lightspeed venture', 'lightspeed ventures'],
+        bioKeywords: ['lightspeed venture', 'lightspeed ventures', 'lightspeedvp', '@lightspeedvp', 'lsvp', 'at lightspeed'],
     },
     'accel': {
         name: 'Accel',
         mainAccounts: ['accel'],
-        bioKeywords: ['accel', 'accelpartners', '@accel', 'accel partners'],
+        // "accel" now uses word boundaries, won't match "accelerate"
+        bioKeywords: ['accel', '@accel', 'accel vc', 'accel ventures', 'accel partners', 'accelpartners'],
     },
     'bessemer': {
         name: 'Bessemer',
@@ -51,12 +53,13 @@ const FIRMS = {
     'index': {
         name: 'Index Ventures',
         mainAccounts: ['indexventures'],
-        bioKeywords: ['index ventures', 'indexventures', '@indexventures', '@index'],
+        bioKeywords: ['index ventures', 'indexventures', '@indexventures', 'at index ventures', 'partner at index'],
     },
     'thrive': {
         name: 'Thrive Capital',
         mainAccounts: ['thrivecapital'],
-        bioKeywords: ['thrive capital', 'thrivecapital', '@thrive', 'thrive holdings', 'thriveholdings'],
+        // Keep specific - "thrive" alone is too common
+        bioKeywords: ['thrive capital', 'thrivecapital', '@thrivecapital'],
     },
     'general': {
         name: 'General Catalyst',
@@ -91,9 +94,9 @@ function assignExistingNodes() {
                 break;
             }
             
-            // Check if username or display_name contains firm keyword
-            const nameToCheck = (node.username + ' ' + (node.display_name || '')).toLowerCase();
-            if (firm.bioKeywords.some(kw => nameToCheck.includes(kw.toLowerCase()))) {
+            // Check if username or display_name contains firm keyword (with word boundaries)
+            const nameToCheck = node.username + ' ' + (node.display_name || '');
+            if (firm.bioKeywords.some(kw => keywordMatches(nameToCheck, kw))) {
                 db.assignCoreNodeToFirm(node.id, firmId);
                 console.log(`✅ @${node.username} → ${firm.name} (name match)`);
                 assigned++;
@@ -103,6 +106,22 @@ function assignExistingNodes() {
     }
     
     console.log(`\n📊 Assigned ${assigned} nodes to firms`);
+}
+
+// Check if keyword matches in text using word boundaries for single words
+function keywordMatches(text, keyword) {
+    const kwLower = keyword.toLowerCase();
+    const textLower = text.toLowerCase();
+    
+    // If keyword starts with @ or contains spaces, use simple includes
+    if (kwLower.startsWith('@') || kwLower.includes(' ')) {
+        return textLower.includes(kwLower);
+    }
+    
+    // For single words, use word boundary regex to avoid partial matches
+    // e.g., "accel" should not match "accelerate"
+    const regex = new RegExp(`\\b${kwLower}\\b`, 'i');
+    return regex.test(text);
 }
 
 // Find employees by searching ALL users in database for firm keywords in bio
@@ -115,6 +134,7 @@ async function discoverEmployees(firmId) {
     
     console.log(`\n🔍 Discovering ${firm.name} employees from your database...\n`);
     console.log(`Searching for bios containing: ${firm.bioKeywords.join(', ')}\n`);
+    console.log(`(Using word boundaries for single words to avoid partial matches)\n`);
     
     // Search ALL users in the database for bio keywords
     const allUsers = db.db.prepare('SELECT * FROM users WHERE bio IS NOT NULL').all();
@@ -122,9 +142,7 @@ async function discoverEmployees(firmId) {
     const employees = new Map();
     
     for (const user of allUsers) {
-        const bioLower = user.bio.toLowerCase();
-        
-        if (firm.bioKeywords.some(kw => bioLower.includes(kw.toLowerCase()))) {
+        if (firm.bioKeywords.some(kw => keywordMatches(user.bio, kw))) {
             // Skip if already a core node
             const existingNode = db.getCoreNodeByTwitterId(user.twitter_id);
             if (!existingNode) {
