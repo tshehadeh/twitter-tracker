@@ -322,9 +322,9 @@ const statements = {
             u.following_count,
             u.profile_image_url,
             u.verified,
-            COUNT(nf.id) as follow_count,
-            GROUP_CONCAT(cn.username) as followed_by_usernames,
-            GROUP_CONCAT(cn.id) as followed_by_ids,
+            COUNT(DISTINCT cn.id) as follow_count,
+            GROUP_CONCAT(DISTINCT cn.username) as followed_by_usernames,
+            GROUP_CONCAT(DISTINCT cn.id) as followed_by_ids,
             GROUP_CONCAT(nf.id) as new_follow_ids,
             MIN(nf.detected_at) as first_detected
         FROM new_follows nf
