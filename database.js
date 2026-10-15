@@ -674,7 +674,7 @@ const dbFunctions = {
     // Get core nodes by firm (with bio from users table if available)
     getCoreNodesByFirm(firmId) {
         return db.prepare(`
-            SELECT cn.*, u.bio 
+            SELECT cn.*, u.bio, u.url 
             FROM core_nodes cn
             LEFT JOIN users u ON cn.twitter_id = u.twitter_id
             WHERE cn.firm = ? AND cn.is_active = 1
@@ -776,6 +776,7 @@ const dbFunctions = {
         return db.prepare(`
             SELECT cn.*, 
                    u.bio,
+                   u.url,
                    (cn.outbound_count + cn.track_count + cn.pass_count) as total_categorized,
                    CASE WHEN (cn.outbound_count + cn.track_count + cn.pass_count) > 0 
                         THEN ROUND(100.0 * cn.track_count / (cn.outbound_count + cn.track_count + cn.pass_count), 1)

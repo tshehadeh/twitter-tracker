@@ -43,6 +43,7 @@ const elements = {
     cardFollowers: document.getElementById('card-followers'),
     cardFollowing: document.getElementById('card-following'),
     cardLink: document.getElementById('card-link'),
+    cardWebsite: document.getElementById('card-website'),
     
     btnOutbound: document.getElementById('btn-outbound'),
     btnTrack: document.getElementById('btn-track'),
@@ -318,6 +319,19 @@ function displayUser(user) {
     elements.cardFollowers.textContent = formatNumber(user.followers_count || 0);
     elements.cardFollowing.textContent = formatNumber(user.following_count || 0);
     elements.cardLink.href = `https://x.com/${user.username}`;
+    
+    // Show website link if available
+    if (user.url) {
+        try {
+            elements.cardWebsite.href = user.url;
+            elements.cardWebsite.textContent = new URL(user.url).hostname.replace('www.', '') + ' →';
+            elements.cardWebsite.style.display = 'inline-block';
+        } catch (e) {
+            elements.cardWebsite.style.display = 'none';
+        }
+    } else {
+        elements.cardWebsite.style.display = 'none';
+    }
 }
 
 // Disable/Enable Action Buttons
@@ -380,6 +394,14 @@ async function loadCategory(category) {
                 ? user.profile_image_url.replace('_normal', '_200x200')
                 : '';
             
+            let websiteLink = '';
+            if (user.url) {
+                try {
+                    const hostname = new URL(user.url).hostname.replace('www.', '');
+                    websiteLink = `<a class="list-item-link website" href="${user.url}" target="_blank">${hostname}</a>`;
+                } catch (e) {}
+            }
+            
             return `
                 <div class="list-item">
                     <img class="list-item-avatar" src="${avatarUrl}" alt="" 
@@ -395,7 +417,10 @@ async function loadCategory(category) {
                             <span>${formatNumber(user.following_count)} following</span>
                         </div>
                     </div>
-                    <a class="list-item-link" href="https://x.com/${user.username}" target="_blank">View</a>
+                    <div class="list-item-links">
+                        <a class="list-item-link" href="https://x.com/${user.username}" target="_blank">View</a>
+                        ${websiteLink}
+                    </div>
                 </div>
             `;
         }).join('');
@@ -520,7 +545,10 @@ function renderFirmMembers() {
                     <button class="member-remove" data-member-id="${member.id}" data-username="${member.username}" title="Remove from firm">×</button>
                 </div>
                 <div class="member-bio">${member.bio || member.display_name || 'No bio'}</div>
-                <a class="member-link" href="https://x.com/${member.username}" target="_blank" onclick="event.stopPropagation()">x.com/${member.username}</a>
+                <div class="member-links">
+                    <a class="member-link" href="https://x.com/${member.username}" target="_blank" onclick="event.stopPropagation()">Profile</a>
+                    ${member.url ? `<a class="member-link" href="${member.url}" target="_blank" onclick="event.stopPropagation()">${(() => { try { return new URL(member.url).hostname.replace('www.', ''); } catch(e) { return 'Site'; } })()}</a>` : ''}
+                </div>
             </div>
         `;
     }).join('');
@@ -949,7 +977,10 @@ async function displayTrackedByPanel(usernames) {
                     ${total > 0 ? `<span class="tracker-rate ${rateClass}">${trackRate}%</span>` : ''}
                 </div>
                 <div class="tracker-bio">${tracker.bio || tracker.display_name || 'No bio'}</div>
-                <a class="tracker-link" href="https://x.com/${tracker.username}" target="_blank">View profile →</a>
+                <div class="tracker-links">
+                    <a class="tracker-link" href="https://x.com/${tracker.username}" target="_blank">Profile</a>
+                    ${tracker.url ? `<a class="tracker-link" href="${tracker.url}" target="_blank">${(() => { try { return new URL(tracker.url).hostname.replace('www.', ''); } catch(e) { return 'Website'; } })()}</a>` : ''}
+                </div>
             </div>
         `;
     }).join('');
