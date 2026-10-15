@@ -547,6 +547,11 @@ body {
     letter-spacing: 0.5px;
 }
 
+.card-links {
+    display: flex;
+    gap: var(--space-md);
+}
+
 .card-link {
     display: inline-block;
     font-size: 12px;
@@ -556,6 +561,10 @@ body {
 
 .card-link:hover {
     text-decoration: underline;
+}
+
+.card-link.website-link {
+    color: var(--text-secondary);
 }
 
 /* ================================

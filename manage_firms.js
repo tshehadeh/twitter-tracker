@@ -233,6 +233,35 @@ function showStats() {
     console.log('\n' + '='.repeat(60));
 }
 
+// Reset a firm - clear all members and re-add with current matching logic
+async function resetFirm(firmId) {
+    const firm = FIRMS[firmId];
+    if (!firm) {
+        console.error(`❌ Unknown firm: ${firmId}`);
+        return;
+    }
+    
+    console.log(`\n🔄 Resetting ${firm.name}...\n`);
+    
+    // Count current members
+    const currentMembers = db.getCoreNodesByFirm(firmId);
+    console.log(`📊 Current members: ${currentMembers.length}`);
+    
+    // Clear all firm assignments for this firm
+    const cleared = db.db.prepare(`UPDATE core_nodes SET firm = NULL WHERE firm = ?`).run(firmId);
+    console.log(`🗑️  Cleared ${cleared.changes} members from ${firm.name}\n`);
+    
+    // Re-discover and add with new matching logic
+    console.log(`🔍 Re-discovering with word boundary matching...\n`);
+    await addEmployeesToFirm(firmId, true);
+    
+    // Show final stats
+    const newMembers = db.getCoreNodesByFirm(firmId);
+    console.log(`\n✅ Reset complete!`);
+    console.log(`   Before: ${currentMembers.length} members`);
+    console.log(`   After:  ${newMembers.length} members`);
+}
+
 // CLI
 async function main() {
     const args = process.argv.slice(2);
@@ -245,6 +274,7 @@ Usage:
   node manage_firms.js --assign              Assign existing core nodes to firms
   node manage_firms.js --discover <firm>     Find employees for a firm
   node manage_firms.js --add <firm>          Add discovered employees as core nodes
+  node manage_firms.js --reset <firm>        Clear firm members and re-add with current matching
   node manage_firms.js --stats               Show firm statistics
   node manage_firms.js --list                List all available firms
 
@@ -252,6 +282,7 @@ Examples:
   node manage_firms.js --assign
   node manage_firms.js --discover a16z
   node manage_firms.js --add 8vc
+  node manage_firms.js --reset accel         # Fix false positives
   node manage_firms.js --stats
 `);
         process.exit(0);
@@ -295,6 +326,17 @@ Examples:
             process.exit(1);
         }
         await addEmployeesToFirm(firmId, true);
+        process.exit(0);
+    }
+    
+    const resetIdx = args.indexOf('--reset');
+    if (resetIdx !== -1) {
+        const firmId = args[resetIdx + 1];
+        if (!firmId) {
+            console.error('Error: --reset requires a firm ID');
+            process.exit(1);
+        }
+        await resetFirm(firmId);
         process.exit(0);
     }
     

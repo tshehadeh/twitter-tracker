@@ -18,6 +18,7 @@ db.exec(`
         username TEXT NOT NULL,
         display_name TEXT,
         bio TEXT,
+        url TEXT,
         verified INTEGER DEFAULT 0,
         followers_count INTEGER DEFAULT 0,
         following_count INTEGER DEFAULT 0,
@@ -122,11 +123,25 @@ try {
     db.exec(`ALTER TABLE core_nodes ADD COLUMN firm TEXT DEFAULT NULL`);
 } catch (e) { /* Column already exists */ }
 
+// Migration: Add url column to users if it doesn't exist
+try {
+    db.exec(`ALTER TABLE users ADD COLUMN url TEXT`);
+} catch (e) { /* Column already exists */ }
+
 // Prepared statements for performance
 const statements = {
     insertUser: db.prepare(`
-        INSERT OR IGNORE INTO users (twitter_id, username, display_name, bio, verified, followers_count, following_count, profile_image_url)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        INSERT INTO users (twitter_id, username, display_name, bio, url, verified, followers_count, following_count, profile_image_url)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ON CONFLICT(twitter_id) DO UPDATE SET
+            username = excluded.username,
+            display_name = excluded.display_name,
+            bio = excluded.bio,
+            url = excluded.url,
+            verified = excluded.verified,
+            followers_count = excluded.followers_count,
+            following_count = excluded.following_count,
+            profile_image_url = excluded.profile_image_url
     `),
     
     getUserByTwitterId: db.prepare(`SELECT * FROM users WHERE twitter_id = ?`),
@@ -234,7 +249,7 @@ const statements = {
         SELECT nf.*, 
                cn.username as core_node_username, cn.display_name as core_node_display_name,
                u.username as followed_username, u.display_name as followed_display_name,
-               u.bio as followed_bio, u.followers_count as followed_followers,
+               u.bio as followed_bio, u.url as followed_url, u.followers_count as followed_followers,
                u.following_count as followed_following, u.profile_image_url as followed_avatar,
                u.verified as followed_verified, u.id as followed_user_db_id
         FROM new_follows nf
@@ -248,7 +263,7 @@ const statements = {
         SELECT nf.*, 
                cn.username as core_node_username, cn.display_name as core_node_display_name,
                u.username as followed_username, u.display_name as followed_display_name,
-               u.bio as followed_bio, u.followers_count as followed_followers,
+               u.bio as followed_bio, u.url as followed_url, u.followers_count as followed_followers,
                u.following_count as followed_following, u.profile_image_url as followed_avatar,
                u.verified as followed_verified, u.id as followed_user_db_id,
                c.category as existing_category
@@ -289,7 +304,7 @@ const statements = {
         SELECT nf.*, 
                cn.username as core_node_username, cn.display_name as core_node_display_name,
                u.username as followed_username, u.display_name as followed_display_name,
-               u.bio as followed_bio, u.followers_count as followed_followers,
+               u.bio as followed_bio, u.url as followed_url, u.followers_count as followed_followers,
                u.following_count as followed_following, u.profile_image_url as followed_avatar,
                u.verified as followed_verified, u.id as followed_user_db_id,
                c.category as existing_category
@@ -363,6 +378,7 @@ const dbFunctions = {
             twitterUser.screen_name || twitterUser.username,
             twitterUser.name || twitterUser.display_name,
             twitterUser.description || twitterUser.bio || '',
+            twitterUser.url || twitterUser.website || '',
             twitterUser.verified ? 1 : 0,
             twitterUser.followers_count || 0,
             twitterUser.friends_count || twitterUser.following_count || 0,
@@ -601,7 +617,7 @@ const dbFunctions = {
                    cn.username as core_node_username, cn.display_name as core_node_display_name,
                    cn.firm as core_node_firm,
                    u.username as followed_username, u.display_name as followed_display_name,
-                   u.bio as followed_bio, u.followers_count as followed_followers,
+                   u.bio as followed_bio, u.url as followed_url, u.followers_count as followed_followers,
                    u.following_count as followed_following, u.profile_image_url as followed_avatar,
                    u.verified as followed_verified, u.id as followed_user_db_id,
                    c.category as existing_category
@@ -621,7 +637,7 @@ const dbFunctions = {
                    cn.username as core_node_username, cn.display_name as core_node_display_name,
                    cn.firm as core_node_firm,
                    u.username as followed_username, u.display_name as followed_display_name,
-                   u.bio as followed_bio, u.followers_count as followed_followers,
+                   u.bio as followed_bio, u.url as followed_url, u.followers_count as followed_followers,
                    u.following_count as followed_following, u.profile_image_url as followed_avatar,
                    u.verified as followed_verified, u.id as followed_user_db_id,
                    c.category as existing_category
@@ -641,7 +657,7 @@ const dbFunctions = {
                    cn.username as core_node_username, cn.display_name as core_node_display_name,
                    cn.firm as core_node_firm,
                    u.username as followed_username, u.display_name as followed_display_name,
-                   u.bio as followed_bio, u.followers_count as followed_followers,
+                   u.bio as followed_bio, u.url as followed_url, u.followers_count as followed_followers,
                    u.following_count as followed_following, u.profile_image_url as followed_avatar,
                    u.verified as followed_verified, u.id as followed_user_db_id,
                    c.category as existing_category
@@ -798,7 +814,7 @@ const dbFunctions = {
             SELECT nf.*, 
                    cn.username as core_node_username, cn.display_name as core_node_display_name,
                    u.username as followed_username, u.display_name as followed_display_name,
-                   u.bio as followed_bio, u.followers_count as followed_followers,
+                   u.bio as followed_bio, u.url as followed_url, u.followers_count as followed_followers,
                    u.following_count as followed_following, u.profile_image_url as followed_avatar,
                    u.verified as followed_verified, u.id as followed_user_db_id,
                    c.category as existing_category

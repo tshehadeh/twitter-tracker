@@ -80,6 +80,7 @@ const elements = {
     nfFollowers: document.getElementById('nf-followers'),
     nfFollowing: document.getElementById('nf-following'),
     nfLink: document.getElementById('nf-link'),
+    nfWebsite: document.getElementById('nf-website'),
     nfBtnOutbound: document.getElementById('nf-btn-outbound'),
     nfBtnTrack: document.getElementById('nf-btn-track'),
     nfBtnPass: document.getElementById('nf-btn-pass'),
@@ -649,6 +650,7 @@ async function loadFirmNewFollows(firmId) {
                     username: nf.followed_username,
                     display_name: nf.followed_display_name,
                     bio: nf.followed_bio,
+                    url: nf.followed_url,
                     followers_count: nf.followed_followers,
                     following_count: nf.followed_following,
                     profile_image_url: nf.followed_avatar,
@@ -879,6 +881,19 @@ async function displayGroupedNewFollow(gf) {
     elements.nfFollowing.textContent = formatNumber(gf.following_count || 0);
     elements.nfLink.href = `https://x.com/${gf.username}`;
     
+    // Show website link if available
+    if (gf.url) {
+        try {
+            elements.nfWebsite.href = gf.url;
+            elements.nfWebsite.textContent = new URL(gf.url).hostname.replace('www.', '') + ' →';
+            elements.nfWebsite.style.display = 'inline-block';
+        } catch (e) {
+            elements.nfWebsite.style.display = 'none';
+        }
+    } else {
+        elements.nfWebsite.style.display = 'none';
+    }
+    
     // Store current for categorization
     currentNewFollow = gf;
 }
@@ -1001,6 +1016,7 @@ function displayNewFollow(nf) {
         username: nf.followed_username,
         verified: nf.followed_verified,
         bio: nf.followed_bio,
+        url: nf.followed_url,
         followers_count: nf.followed_followers,
         following_count: nf.followed_following,
         user_id: nf.followed_user_db_id
