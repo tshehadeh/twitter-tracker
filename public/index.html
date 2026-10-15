@@ -176,9 +176,9 @@
                 <div class="whitepaper">
                     <header class="whitepaper-header">
                         <h1>Attention Is All You Need</h1>
-                        <p class="whitepaper-subtitle">On the Topology of Innovation and the Geometry of Ideas</p>
+                        <p class="whitepaper-subtitle">Mapping the Venture Ecosystem Through Follow Graph Analysis</p>
                         <p class="whitepaper-meta">Thomas Shehadeh • October 2026</p>
-                        <p class="whitepaper-epigraph">"The network is the computer." — John Gage, Sun Microsystems, 1984</p>
+                        <p class="whitepaper-epigraph">"The map is not the territory — but a good map reveals structure the territory hides."</p>
                     </header>
                     
                     <!-- Part I: Philosophy -->
@@ -609,16 +609,228 @@
                         </p>
                     </section>
                     
-                    <!-- Part IV: The Data -->
+                    <!-- Part IV: The Evidence -->
                     <section class="whitepaper-section whitepaper-part-header">
-                        <h2>Part IV: Live System</h2>
+                        <h2>Part IV: The Evidence</h2>
+                        <p class="whitepaper-body part-intro">
+                            Results from analysis of 1,083,174 follow relationships across 3,406 tracked investors.
+                        </p>
+                    </section>
+                    
+                    <section class="whitepaper-section">
+                        <h2>§11. The Dataset</h2>
+                        <p class="whitepaper-body">
+                            We track 3,406 venture capitalists, angels, and operators across 11 major firms. Each night, we record who they follow. The current graph contains 1,083,174 edges connecting 337,364 accounts.
+                        </p>
+                        <p class="whitepaper-body">
+                            For analysis, we filter to accounts followed by at least 2 tracked investors. This removes noise (personal friends, random follows) and keeps signal. The filtered graph contains 115,406 accounts and 861,209 edges.
+                        </p>
+                        
+                        <div class="visual-diagram">
+                            <pre class="ascii-art">
+    ┌─────────────────────────────────────────────────────────────────────┐
+    │                         DATASET STATISTICS                          │
+    │                                                                     │
+    │    Raw Graph                      Filtered Graph (2+ VC follows)    │
+    │    ──────────                     ─────────────────────────────     │
+    │    337,364 accounts               115,406 accounts                  │
+    │    1,083,174 edges                861,209 edges                     │
+    │                                                                     │
+    │    Distribution of VC follows:                                      │
+    │    ┌────────────────────────────────────────────────────────────┐   │
+    │    │ 1 follow:     222,990 accounts  ░░░░░░░░░░░░░░░░░░░░░░░░░  │   │
+    │    │ 2+ follows:   114,374 accounts  ░░░░░░░░░░░░               │   │
+    │    │ 5+ follows:    40,161 accounts  ░░░░░                      │   │
+    │    │ 10+ follows:   18,890 accounts  ░░                         │   │
+    │    └────────────────────────────────────────────────────────────┘   │
+    │                                                                     │
+    └─────────────────────────────────────────────────────────────────────┘
+                            </pre>
+                        </div>
+                    </section>
+                    
+                    <section class="whitepaper-section">
+                        <h2>§12. The Core Finding</h2>
+                        <p class="whitepaper-body">
+                            PageRank and follower count measure different things. The Spearman correlation between them is <strong>ρ = 0.22</strong> — barely correlated. An account's popularity with the general public tells you almost nothing about its structural importance in the investor network.
+                        </p>
+                        <p class="whitepaper-body">
+                            By contrast, PageRank and VC follow count correlate at <strong>ρ = 0.74</strong>. This makes sense: both measure attention from sophisticated actors. But PageRank adds recursive weighting — being followed by @pmarca counts more than being followed by someone @pmarca has never heard of.
+                        </p>
+                        
+                        <div class="visual-diagram">
+                            <pre class="ascii-art">
+    ┌─────────────────────────────────────────────────────────────────────┐
+    │                      CORRELATION MATRIX                             │
+    │                                                                     │
+    │                        PageRank    Followers   VC Follows           │
+    │                        ────────    ─────────   ──────────           │
+    │    PageRank              1.00        0.22        0.74               │
+    │    Followers             0.22        1.00        0.26               │
+    │    VC Follows            0.74        0.26        1.00               │
+    │                                                                     │
+    │    ════════════════════════════════════════════════════════════    │
+    │                                                                     │
+    │    Key insight: PageRank captures something different from          │
+    │    follower counts. High PageRank + low followers = hidden signal.  │
+    │                                                                     │
+    └─────────────────────────────────────────────────────────────────────┘
+                            </pre>
+                        </div>
+                    </section>
+                    
+                    <section class="whitepaper-section">
+                        <h2>§13. Top Accounts by PageRank</h2>
+                        <p class="whitepaper-body">
+                            The top accounts are a mix of AI companies, VCs, and founders. Note the divergence column: positive numbers mean PageRank ranks them higher than follower count would suggest.
+                        </p>
+                        
+                        <div class="network-table" style="font-size: 12px;">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>#</th>
+                                        <th>Account</th>
+                                        <th>Followers</th>
+                                        <th>VC Follows</th>
+                                        <th>Divergence</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr><td>1</td><td>@OpenAI</td><td>5.4M</td><td>250</td><td>+510</td></tr>
+                                    <tr><td>2</td><td>@Andercot</td><td>134k</td><td>116</td><td>+9,623</td></tr>
+                                    <tr><td>3</td><td>@midjourney</td><td>463k</td><td>102</td><td>+4,290</td></tr>
+                                    <tr><td>4</td><td>@elonmusk</td><td>241M</td><td>364</td><td>-3</td></tr>
+                                    <tr><td>5</td><td>@DDukes12</td><td>4.5k</td><td>22</td><td>+53,257</td></tr>
+                                    <tr><td>6</td><td>@j44frolic</td><td>114</td><td>2</td><td>+112,273</td></tr>
+                                    <tr><td>7</td><td>@sama</td><td>6.4M</td><td>427</td><td>+414</td></tr>
+                                    <tr><td>8</td><td>@deedydas</td><td>258k</td><td>198</td><td>+6,369</td></tr>
+                                    <tr><td>9</td><td>@karpathy</td><td>4.4M</td><td>384</td><td>+635</td></tr>
+                                    <tr><td>10</td><td>@tbpn</td><td>1.6M</td><td>277</td><td>+1,622</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                        
+                        <p class="whitepaper-body">
+                            Note @j44frolic at rank 6: 114 followers, 2 VC follows, yet PageRank places them in the top 10. This account sits at a structurally important position in the graph — followed by accounts that are themselves highly followed by other influential accounts.
+                        </p>
+                    </section>
+                    
+                    <section class="whitepaper-section">
+                        <h2>§14. Largest Divergences</h2>
+                        <p class="whitepaper-body">
+                            These accounts have the largest gap between their PageRank ranking and their follower ranking. They are structurally important but not publicly famous. Many are early-stage founders at companies that haven't launched yet.
+                        </p>
+                        
+                        <div class="query-examples">
+                            <div class="query-example">
+                                <code>@sl_251</code>
+                                <span>33 followers, PageRank #92 (+114,788 divergence) — "ml @specs intelligence"</span>
+                            </div>
+                            <div class="query-example">
+                                <code>@chloeaddaa</code>
+                                <span>23 followers, PageRank #439 (+114,669 divergence) — "founding team @paradigmai | yale '22"</span>
+                            </div>
+                            <div class="query-example">
+                                <code>@BossBobster</code>
+                                <span>39 followers, PageRank #751 (+113,971 divergence) — "MIT '28 | USACO Finalist | Intern @ Tilde Research"</span>
+                            </div>
+                            <div class="query-example">
+                                <code>@munchiebabbit</code>
+                                <span>42 followers, PageRank #707 (+113,941 divergence) — "former designer @shopify, founding engineer @flairai_"</span>
+                            </div>
+                        </div>
+                        
+                        <p class="whitepaper-body">
+                            These are the accounts to watch. The network has noticed them before the crowd has.
+                        </p>
+                    </section>
+                    
+                    <section class="whitepaper-section">
+                        <h2>§15. Emergent Communities</h2>
+                        <p class="whitepaper-body">
+                            The Louvain algorithm detected 51 communities with a modularity score of 0.256. We told it nothing about sectors or industries. It found them anyway.
+                        </p>
+                        
+                        <div class="cluster-grid">
+                            <div class="cluster-card">
+                                <h3>Cluster 15: VC Twitter</h3>
+                                <div class="cluster-count">5,663</div>
+                                <div class="cluster-keywords">@patrickc, @DavidSacks, @paulg, @naval, @benthompson, @danielgross</div>
+                            </div>
+                            <div class="cluster-card">
+                                <h3>Cluster 2: AI/ML</h3>
+                                <div class="cluster-count">3,966</div>
+                                <div class="cluster-keywords">@OpenAI, @midjourney, @sama, @karpathy, @pmarca, @natfriedman</div>
+                            </div>
+                            <div class="cluster-card">
+                                <h3>Cluster 7: Tech Moguls</h3>
+                                <div class="cluster-count">3,348</div>
+                                <div class="cluster-keywords">@elonmusk, @brian_armstrong, @garrytan, @tbpn, @johncoogan</div>
+                            </div>
+                            <div class="cluster-card">
+                                <h3>Cluster 0: Design/Product</h3>
+                                <div class="cluster-count">2,008</div>
+                                <div class="cluster-keywords">@rauchg, @soleio, @joulee, @minafahmi</div>
+                            </div>
+                        </div>
+                        
+                        <p class="whitepaper-body">
+                            The algorithm also found unexpected communities: a mountain biking cluster (190 members including @bikemag, @GregMinnaar), a NYC news cluster (137 members including @CNN, @MTA, @NYPDnews). These reveal the outside interests of tracked investors.
+                        </p>
+                    </section>
+                    
+                    <section class="whitepaper-section">
+                        <h2>§16. Limitations</h2>
+                        <p class="whitepaper-body">
+                            <strong>Selection bias.</strong> We track ~3,400 investors, mostly US-based, mostly tech-focused. The graph reflects their attention, not the world's. An important founder in biotech or deep tech may be invisible if our tracked investors haven't noticed them yet.
+                        </p>
+                        <p class="whitepaper-body">
+                            <strong>Survivorship bias.</strong> We see who investors follow today. We don't see who they unfollowed, or who they chose not to follow. The graph overstates consensus and understates disagreement.
+                        </p>
+                        <p class="whitepaper-body">
+                            <strong>Correlation ≠ causation.</strong> High PageRank doesn't cause funding. It correlates with attention from people who make funding decisions. An account could have high PageRank for reasons unrelated to fundability (entertainment value, controversy, personal friendship).
+                        </p>
+                        <p class="whitepaper-body">
+                            <strong>Twitter ≠ reality.</strong> Some important founders don't use Twitter. Some investors follow people ironically. The map is not the territory; it's a projection of the territory onto a particular medium.
+                        </p>
+                    </section>
+                    
+                    <section class="whitepaper-section">
+                        <h2>§17. The Math</h2>
+                        <p class="whitepaper-body">
+                            For completeness, the algorithms used:
+                        </p>
+                        <p class="whitepaper-body">
+                            <strong>PageRank</strong> computes the stationary distribution of a random walk on the graph. The score of node i is:
+                        </p>
+                        <p class="whitepaper-body" style="font-family: var(--font-mono); text-align: center;">
+                            PR(i) = (1-d)/N + d × Σ PR(j)/L(j)
+                        </p>
+                        <p class="whitepaper-body">
+                            Where d = 0.85 (damping factor), N = total nodes, L(j) = out-degree of j, and the sum is over all j linking to i. We iterate until convergence (Δ &lt; 10⁻⁶).
+                        </p>
+                        <p class="whitepaper-body">
+                            <strong>Louvain clustering</strong> maximizes modularity Q:
+                        </p>
+                        <p class="whitepaper-body" style="font-family: var(--font-mono); text-align: center;">
+                            Q = (1/2m) × Σ [A_ij - (k_i × k_j)/(2m)] × δ(c_i, c_j)
+                        </p>
+                        <p class="whitepaper-body">
+                            Where m = total edges, A_ij = adjacency, k_i = degree of i, and δ = 1 if i and j are in the same community. Our modularity score of 0.256 indicates moderate community structure.
+                        </p>
+                    </section>
+                    
+                    <!-- Part V: Live System -->
+                    <section class="whitepaper-section whitepaper-part-header">
+                        <h2>Part V: Live System</h2>
                         <p class="whitepaper-body part-intro">
                             Current state of the network as of <span id="network-date-inline"></span>
                         </p>
                     </section>
                     
                     <section class="whitepaper-section">
-                        <h2>§11. Network Visualization</h2>
+                        <h2>§18. Network Visualization</h2>
                         <p class="whitepaper-body">
                             The visualization below represents the ecosystem as a force-directed graph. Nodes are sized by 
                             PageRank score. Colors indicate detected clusters. Spatial proximity reflects connection similarity — 
@@ -672,7 +884,7 @@
                     </section>
                     
                     <section class="whitepaper-section">
-                        <h2>§12. Influence Rankings</h2>
+                        <h2>§19. Influence Rankings</h2>
                         <p class="whitepaper-body">
                             Top accounts by PageRank score. Unlike raw follower counts, PageRank weights <em>who</em> follows you. 
                             Being followed by @pmarca contributes more to your score than being followed by a random account. 
@@ -697,7 +909,7 @@
                     </section>
                     
                     <section class="whitepaper-section">
-                        <h2>§13. Detected Communities</h2>
+                        <h2>§20. Detected Communities</h2>
                         <p class="whitepaper-body">
                             Communities detected via Louvain algorithm. These clusters emerge from connection patterns, not manual 
                             labels — accounts that follow similar people cluster together. The algorithm sees only edges; yet the 
@@ -728,7 +940,7 @@
                     </section>
                     
                     <section class="whitepaper-section">
-                        <h2>§14. Momentum Leaders</h2>
+                        <h2>§21. Momentum Leaders</h2>
                         <p class="whitepaper-body">
                             Accounts with highest attention velocity — those gaining VC follows fastest relative to their baseline.
                             High momentum often precedes funding announcements, product launches, or viral moments. These are the 
@@ -739,9 +951,9 @@
                         </div>
                     </section>
                     
-                    <!-- Part V: The Future -->
+                    <!-- Part VI: The Future -->
                     <section class="whitepaper-section whitepaper-part-header">
-                        <h2>Part V: What Comes Next</h2>
+                        <h2>Part VI: What Comes Next</h2>
                         <p class="whitepaper-body part-intro">
                             "The future is already here — it's just not evenly distributed."<br>
                             — William Gibson
@@ -749,7 +961,7 @@
                     </section>
                     
                     <section class="whitepaper-section">
-                        <h2>§15. Roadmap</h2>
+                        <h2>§22. Roadmap</h2>
                         <p class="whitepaper-body">
                             The system as it exists today is a foundation. Several enhancements are planned:
                         </p>
@@ -763,7 +975,7 @@
                     </section>
                     
                     <section class="whitepaper-section">
-                        <h2>§16. Closing Thoughts</h2>
+                        <h2>§23. Closing Thoughts</h2>
                         <p class="whitepaper-body">
                             We began with a simple observation: attention is signal. Where sophisticated actors pay attention, 
                             information exists. Where attention converges, alpha hides.
