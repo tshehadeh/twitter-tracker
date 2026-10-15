@@ -7,53 +7,66 @@ const { getUserByUsername, getFollowing } = require('./get_following');
 const FIRMS = {
     'a16z': {
         name: 'Andreessen Horowitz',
-        mainAccounts: ['a16z', 'a]6zcrypto', 'a16zgames', 'a16zbio'],
-        bioKeywords: ['a16z', 'andreessen', 'horowitz'],
+        mainAccounts: ['a16z', 'a16zcrypto', 'a16zgames', 'a16zbio'],
+        bioKeywords: [
+            'a16z', 'andreessen horowitz', 'andreessen', '@a16z', 
+            'a16zcrypto', 'a16zgames', 'a16zbio', 'a16z crypto', 'a16z games', 'a16z bio'
+        ],
     },
     '8vc': {
         name: '8VC',
         mainAccounts: ['8vc'],
-        bioKeywords: ['8vc'],
+        bioKeywords: ['8vc', '8 vc', '@8vc', 'eight vc'],
     },
     'sequoia': {
         name: 'Sequoia',
         mainAccounts: ['sequoia'],
-        bioKeywords: ['sequoia'],
+        bioKeywords: ['sequoia', 'sequoiacap', '@sequoia', 'sequoia capital'],
     },
     'founders': {
         name: 'Founders Fund',
         mainAccounts: ['foundersfund'],
-        bioKeywords: ['founders fund', 'foundersfund'],
+        bioKeywords: ['founders fund', 'foundersfund', '@foundersfund', 'ffvc', 'ff vc'],
     },
     'greylock': {
         name: 'Greylock',
-        mainAccounts: ['graboratorylock'],
-        bioKeywords: ['greylock'],
+        mainAccounts: ['greylock'],
+        bioKeywords: ['greylock', 'greylockpartners', '@greylock', 'greylock partners'],
     },
     'lightspeed': {
         name: 'Lightspeed',
-        mainAccounts: ['lightaboratorypeedvp'],
-        bioKeywords: ['lightspeed'],
+        mainAccounts: ['lightspeedvp'],
+        bioKeywords: ['lightspeed', 'lightspeedvp', 'lsvp', '@lightspeed', 'lightspeed venture', 'lightspeed ventures'],
     },
     'accel': {
         name: 'Accel',
         mainAccounts: ['accel'],
-        bioKeywords: ['accel'],
+        bioKeywords: ['accel', 'accelpartners', '@accel', 'accel partners'],
     },
     'bessemer': {
         name: 'Bessemer',
-        mainAccounts: ['bessaboratoryervp'],
-        bioKeywords: ['bessemer'],
+        mainAccounts: ['BessemerVP'],
+        bioKeywords: ['bessemer', 'bvp', 'bessemervp', '@bessemer', 'bessemer venture'],
+    },
+    'index': {
+        name: 'Index Ventures',
+        mainAccounts: ['indexventures'],
+        bioKeywords: ['index ventures', 'indexventures', '@indexventures', '@index'],
     },
     'thrive': {
         name: 'Thrive Capital',
-        mainAccounts: ['thaboratoryrivecapital'],
-        bioKeywords: ['thrive capital'],
+        mainAccounts: ['thrivecapital'],
+        bioKeywords: ['thrive capital', 'thrivecapital', '@thrive', 'thrive holdings', 'thriveholdings'],
     },
     'general': {
         name: 'General Catalyst',
-        mainAccounts: ['gcvp'],
-        bioKeywords: ['general catalyst', 'gc '],
+        mainAccounts: ['gcvp', 'generalcatalyst'],
+        bioKeywords: ['general catalyst', 'generalcatalyst', 'gcvp', '@gcvp', 'gc partners'],
+    },
+    'bain': {
+        name: 'Bain Capital Ventures',
+        mainAccounts: ['BainCapVC'],
+        bioKeywords: ['bain capital', 'baincapital', 'bcv', 'bain capital ventures', '@baincapital'],
     },
 };
 
