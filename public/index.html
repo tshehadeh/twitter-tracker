@@ -19,7 +19,17 @@
             </div>
             
             <div class="sidebar-section">
-                <h2>§1. Review</h2>
+                <h2>§1. Discover</h2>
+                <nav class="review-nav">
+                    <button id="network-btn" class="review-btn">
+                        <span class="review-label">Network Graph</span>
+                        <span class="review-count">◉</span>
+                    </button>
+                </nav>
+            </div>
+            
+            <div class="sidebar-section">
+                <h2>§2. Review</h2>
                 <nav class="review-nav">
                     <button id="new-follows-btn" class="review-btn">
                         <span class="review-label">Review Firms</span>
@@ -37,7 +47,7 @@
             </div>
             
             <div class="sidebar-section">
-                <h2>§2. Sessions</h2>
+                <h2>§3. Sessions</h2>
                 <div id="sessions-list" class="sessions-list">
                     <!-- Sessions populated by JS -->
                 </div>
@@ -45,7 +55,7 @@
             </div>
             
             <div class="sidebar-section">
-                <h2>§3. Categories</h2>
+                <h2>§4. Categories</h2>
                 <nav class="category-nav">
                     <button class="category-btn" data-category="outbound">
                         <span class="category-marker">○</span>
@@ -158,6 +168,100 @@
                 </div>
                 <div id="category-list" class="category-list">
                     <!-- Users list populated by JS -->
+                </div>
+            </div>
+            
+            <!-- Network Graph View -->
+            <div id="network-view" class="view">
+                <div class="whitepaper">
+                    <header class="whitepaper-header">
+                        <h1>Network Intelligence Report</h1>
+                        <p class="whitepaper-subtitle">Ecosystem Mapping & Influence Analysis</p>
+                        <p class="whitepaper-meta">Generated <span id="network-date"></span> • <span id="network-node-count">0</span> nodes • <span id="network-edge-count">0</span> edges</p>
+                    </header>
+                    
+                    <section class="whitepaper-section">
+                        <h2>§1. Abstract</h2>
+                        <p class="whitepaper-abstract">
+                            This report presents a network analysis of the venture ecosystem based on Twitter follow relationships. 
+                            Using PageRank for influence scoring and Louvain clustering for community detection, we identify 
+                            key players and emerging trends across technology sectors.
+                        </p>
+                    </section>
+                    
+                    <section class="whitepaper-section">
+                        <h2>§2. Network Visualization</h2>
+                        <div class="network-controls">
+                            <input type="text" id="network-search" class="network-search" placeholder="Search: nuclear, AI, defense..." />
+                            <select id="network-cluster-filter" class="network-filter">
+                                <option value="all">All Clusters</option>
+                            </select>
+                            <select id="network-time-filter" class="network-filter">
+                                <option value="7">Last 7 days</option>
+                                <option value="30" selected>Last 30 days</option>
+                                <option value="90">Last 90 days</option>
+                                <option value="365">Last year</option>
+                            </select>
+                        </div>
+                        
+                        <div id="network-graph" class="network-graph">
+                            <div class="network-placeholder">
+                                <pre>
+┌─────────────────────────────────────────────────────────────────┐
+│                                                                 │
+│         ◯ AI/ML                    ◯ Defense                    │
+│       ◯◯◯◯◯                      ◯◯◯                           │
+│      ◯◯●◯◯◯                   ◯◯◯◯                             │
+│       ◯◯◯◯                                                      │
+│                  ◯◯ Climate                                     │
+│                ◯◯●◯◯       ◯ Crypto                            │
+│                 ◯◯◯      ◯◯◯◯                                  │
+│                                                                 │
+└─────────────────────────────────────────────────────────────────┘
+                                </pre>
+                                <p class="network-legend">● = high PageRank (influencer) · ◯ = normal nodes · Clusters positioned by similarity</p>
+                                <p class="network-status">Loading network data...</p>
+                            </div>
+                        </div>
+                    </section>
+                    
+                    <section class="whitepaper-section">
+                        <h2>§3. Top Influencers by PageRank</h2>
+                        <div id="network-top-influencers" class="network-table">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>Rank</th>
+                                        <th>User</th>
+                                        <th>PageRank</th>
+                                        <th>Cluster</th>
+                                        <th>Followers</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="influencers-tbody">
+                                    <tr><td colspan="5" class="loading">Analyzing network...</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </section>
+                    
+                    <section class="whitepaper-section">
+                        <h2>§4. Detected Clusters</h2>
+                        <div id="network-clusters" class="cluster-grid">
+                            <p class="loading">Running community detection...</p>
+                        </div>
+                    </section>
+                    
+                    <section class="whitepaper-section">
+                        <h2>§5. Trending This Period</h2>
+                        <div id="network-trending" class="trending-list">
+                            <p class="loading">Calculating momentum...</p>
+                        </div>
+                    </section>
+                    
+                    <footer class="whitepaper-footer">
+                        <p>Attention Is All You Need • Network Intelligence</p>
+                    </footer>
                 </div>
             </div>
             

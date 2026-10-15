@@ -17,6 +17,7 @@ const views = {
     review: document.getElementById('review-view'),
     category: document.getElementById('category-view'),
     newFollows: document.getElementById('new-follows-view'),
+    network: document.getElementById('network-view'),
 };
 
 const elements = {
@@ -102,6 +103,18 @@ const elements = {
     
     // Theme toggle
     themeToggle: document.getElementById('theme-toggle'),
+    
+    // Network view elements
+    networkBtn: document.getElementById('network-btn'),
+    networkDate: document.getElementById('network-date'),
+    networkNodeCount: document.getElementById('network-node-count'),
+    networkEdgeCount: document.getElementById('network-edge-count'),
+    networkSearch: document.getElementById('network-search'),
+    networkClusterFilter: document.getElementById('network-cluster-filter'),
+    networkTimeFilter: document.getElementById('network-time-filter'),
+    influencersTbody: document.getElementById('influencers-tbody'),
+    networkClusters: document.getElementById('network-clusters'),
+    networkTrending: document.getElementById('network-trending'),
 };
 
 // View Management
@@ -1134,6 +1147,9 @@ elements.categoryBtns.forEach(btn => {
 
 elements.backBtn.addEventListener('click', goBack);
 
+// Network view event listener
+elements.networkBtn.addEventListener('click', showNetworkView);
+
 // New Follows event listeners
 elements.newFollowsBtn.addEventListener('click', showNewFollowsView);
 elements.nfBackBtn.addEventListener('click', () => showView('welcome'));
@@ -1218,6 +1234,83 @@ document.addEventListener('keydown', (e) => {
         }
     }
 });
+
+// ============================================
+// NETWORK VIEW FUNCTIONS
+// ============================================
+
+async function showNetworkView() {
+    showView('network');
+    
+    // Set current date
+    elements.networkDate.textContent = new Date().toLocaleDateString('en-US', { 
+        year: 'numeric', 
+        month: 'long', 
+        day: 'numeric' 
+    });
+    
+    // Load network data
+    await loadNetworkData();
+}
+
+async function loadNetworkData() {
+    try {
+        // Fetch network stats from API
+        const data = await api('/network/stats');
+        
+        elements.networkNodeCount.textContent = data.nodeCount || 0;
+        elements.networkEdgeCount.textContent = data.edgeCount || 0;
+        
+        // Populate top influencers
+        if (data.topInfluencers && data.topInfluencers.length > 0) {
+            elements.influencersTbody.innerHTML = data.topInfluencers.map((user, i) => `
+                <tr>
+                    <td>${i + 1}</td>
+                    <td><a href="https://x.com/${user.username}" target="_blank">@${user.username}</a></td>
+                    <td>${user.pageRank?.toFixed(4) || '—'}</td>
+                    <td>${user.cluster || '—'}</td>
+                    <td>${formatNumber(user.followers_count || 0)}</td>
+                </tr>
+            `).join('');
+        }
+        
+        // Populate clusters
+        if (data.clusters && data.clusters.length > 0) {
+            elements.networkClusters.innerHTML = data.clusters.map(cluster => `
+                <div class="cluster-card">
+                    <h3>${cluster.name}</h3>
+                    <div class="cluster-count">${cluster.count}</div>
+                    <div class="cluster-keywords">${cluster.keywords?.join(', ') || ''}</div>
+                </div>
+            `).join('');
+        }
+        
+        // Populate trending
+        if (data.trending && data.trending.length > 0) {
+            elements.networkTrending.innerHTML = data.trending.map((user, i) => `
+                <div class="trending-item">
+                    <span class="trending-rank">${i + 1}</span>
+                    <div class="trending-info">
+                        <div class="trending-name">@${user.username}</div>
+                        <div class="trending-bio">${user.bio?.substring(0, 60) || 'No bio'}...</div>
+                    </div>
+                    <span class="trending-momentum ${user.momentum < 0 ? 'negative' : ''}">
+                        ${user.momentum > 0 ? '+' : ''}${user.momentum || 0}%
+                    </span>
+                </div>
+            `).join('');
+        }
+        
+    } catch (error) {
+        console.log('Network API not yet implemented');
+        // Show placeholder data for now
+        elements.networkNodeCount.textContent = '—';
+        elements.networkEdgeCount.textContent = '—';
+        elements.influencersTbody.innerHTML = '<tr><td colspan="5" class="loading">Network analysis coming soon...</td></tr>';
+        elements.networkClusters.innerHTML = '<p class="loading">Community detection coming soon...</p>';
+        elements.networkTrending.innerHTML = '<p class="loading">Momentum tracking coming soon...</p>';
+    }
+}
 
 // Initialize
 async function init() {

@@ -604,6 +604,55 @@ app.post('/api/core-nodes/:id/resume', (req, res) => {
     }
 });
 
+// ============================================
+// NETWORK ANALYSIS API (placeholder)
+// ============================================
+
+// API: Get network stats and analysis
+app.get('/api/network/stats', (req, res) => {
+    try {
+        // Get basic counts from database
+        const userCount = db.db.prepare('SELECT COUNT(*) as count FROM users').get().count;
+        const followCount = db.db.prepare('SELECT COUNT(*) as count FROM follows').get().count;
+        const coreNodeCount = db.db.prepare('SELECT COUNT(*) as count FROM core_nodes WHERE is_active = 1').get().count;
+        
+        // Get top users by follower count (placeholder for PageRank)
+        const topUsers = db.db.prepare(`
+            SELECT u.*, 
+                   (SELECT COUNT(*) FROM follows f WHERE f.followed_user_id = u.id) as follow_count
+            FROM users u
+            ORDER BY u.followers_count DESC
+            LIMIT 10
+        `).all();
+        
+        // Placeholder clusters based on bio keywords
+        const clusters = [
+            { name: 'AI / ML', count: 0, keywords: ['AI', 'ML', 'machine learning'] },
+            { name: 'Climate Tech', count: 0, keywords: ['climate', 'energy', 'nuclear'] },
+            { name: 'Crypto / Web3', count: 0, keywords: ['crypto', 'web3', 'blockchain'] },
+            { name: 'Defense Tech', count: 0, keywords: ['defense', 'aerospace', 'gov'] },
+        ];
+        
+        res.json({
+            nodeCount: userCount,
+            edgeCount: followCount,
+            coreNodeCount,
+            topInfluencers: topUsers.map(u => ({
+                ...u,
+                pageRank: Math.random() * 0.01, // Placeholder
+                cluster: clusters[Math.floor(Math.random() * clusters.length)].name
+            })),
+            clusters,
+            trending: topUsers.slice(0, 5).map(u => ({
+                ...u,
+                momentum: Math.floor(Math.random() * 20) - 5 // Placeholder
+            }))
+        });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
 // Serve index.html for all other routes (Express 5 syntax)
 app.get('/{*splat}', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'index.html'));
