@@ -303,13 +303,13 @@ def analyze_pagerank_vs_followers(pagerank, users, core_nodes):
     
     return by_pagerank, by_followers, divergences
 
-def count_vc_follows(user_id, edges, core_node_ids):
-    """Count how many core nodes (VCs) follow a user."""
-    count = 0
+def build_vc_follow_counts(edges, core_node_ids):
+    """Build a dict of how many VCs follow each user. O(E) instead of O(N*E)."""
+    counts = defaultdict(int)
     for source, target in edges:
-        if target == user_id and source in core_node_ids:
-            count += 1
-    return count
+        if source in core_node_ids:
+            counts[target] += 1
+    return counts
 
 def compute_spearman(rank1, rank2, ids):
     """Compute Spearman correlation between two rankings."""
@@ -430,12 +430,9 @@ def main():
     print("5. BASELINE COMPARISON")
     print("-" * 40)
     
-    # Compute VC follow counts
+    # Compute VC follow counts (optimized: single pass through edges)
     print("   Computing VC follow counts...")
-    all_node_ids = list(pagerank.keys())
-    vc_follow_counts = {}
-    for node_id in all_node_ids:
-        vc_follow_counts[node_id] = count_vc_follows(node_id, edges, core_node_ids)
+    vc_follow_counts = build_vc_follow_counts(edges, core_node_ids)
     
     # Create rankings
     pr_rank = {item['twitter_id']: i for i, item in enumerate(sorted(divergences, key=lambda x: -x['pagerank']))}
