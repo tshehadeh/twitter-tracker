@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 
 const db = require('./database');
+const { getUserByUsername } = require('./get_following');
 const { getUserByUsername, getFollowing } = require('./get_following');
 
 // Firm definitions with main accounts and bio keywords
@@ -110,6 +111,9 @@ function assignExistingNodes() {
 
 // Check if keyword matches in text using word boundaries for single words
 function keywordMatches(text, keyword) {
+    // Handle null/undefined text
+    if (!text) return false;
+    
     const kwLower = keyword.toLowerCase();
     const textLower = text.toLowerCase();
     
@@ -122,6 +126,88 @@ function keywordMatches(text, keyword) {
     // e.g., "accel" should not match "accelerate"
     const regex = new RegExp(`\\b${kwLower}\\b`, 'i');
     return regex.test(text);
+}
+
+// Debug function to test keyword matching
+function testKeywordMatch(bio, firmId) {
+    const firm = FIRMS[firmId];
+    if (!firm) {
+        console.log(`Unknown firm: ${firmId}`);
+        return;
+    }
+    console.log(`\nTesting bio against ${firm.name} keywords:`);
+    console.log(`Bio: "${bio}"\n`);
+    for (const kw of firm.bioKeywords) {
+        const matches = keywordMatches(bio, kw);
+        console.log(`  "${kw}" → ${matches ? '✅ MATCH' : '❌ no match'}`);
+    }
+}
+
+// Manually add a user by username to a firm (fetches from Twitter API)
+async function addManualEmployee(firmId, username) {
+    const firm = FIRMS[firmId];
+    if (!firm) {
+        console.error(`❌ Unknown firm: ${firmId}`);
+        return;
+    }
+    
+    // Clean username (remove @ if present)
+    const cleanUsername = username.replace(/^@/, '');
+    
+    console.log(`\n🔍 Looking up @${cleanUsername}...`);
+    
+    try {
+        const user = await getUserByUsername(cleanUsername);
+        
+        if (!user) {
+            console.error(`❌ Could not find user @${cleanUsername}`);
+            return;
+        }
+        
+        console.log(`\n👤 Found: @${user.username} - ${user.name}`);
+        console.log(`   Bio: ${user.biography?.substring(0, 100)}...`);
+        console.log(`   Followers: ${user.followersCount}, Following: ${user.followingCount}`);
+        
+        // Check if already a core node
+        const existing = db.getCoreNodeByTwitterId(user.userId);
+        if (existing) {
+            if (existing.firm === firmId) {
+                console.log(`\n✅ @${cleanUsername} is already a ${firm.name} core node`);
+                return;
+            }
+            // Update firm assignment
+            db.assignCoreNodeToFirm(existing.id, firmId);
+            console.log(`\n🔗 @${cleanUsername} reassigned to ${firm.name}`);
+            return;
+        }
+        
+        // Add user to users table first
+        db.upsertUser(
+            user.userId,
+            user.username,
+            user.name,
+            user.biography,
+            user.followersCount,
+            user.followingCount,
+            user.location || null
+        );
+        
+        // Add as core node with firm
+        db.addCoreNodeWithFirm(
+            user.userId,
+            user.username,
+            user.name,
+            user.followingCount,
+            user.followersCount,
+            firmId
+        );
+        
+        console.log(`\n✅ Added @${cleanUsername} to ${firm.name} as core node`);
+        console.log(`   Their follows will be scraped in the next run`);
+        
+    } catch (error) {
+        console.error(`❌ Error looking up @${cleanUsername}:`, error.message);
+    }
 }
 
 // Find employees by searching ALL users in database for firm keywords in bio
@@ -137,24 +223,47 @@ async function discoverEmployees(firmId) {
     console.log(`(Using word boundaries for single words to avoid partial matches)\n`);
     
     // Search ALL users in the database for bio keywords
-    const allUsers = db.db.prepare('SELECT * FROM users WHERE bio IS NOT NULL').all();
+    const allUsers = db.db.prepare('SELECT * FROM users WHERE bio IS NOT NULL AND bio != ""').all();
     
     const employees = new Map();
     
     for (const user of allUsers) {
         if (firm.bioKeywords.some(kw => keywordMatches(user.bio, kw))) {
-            // Skip if already a core node
+            // Skip if already a core node WITH this firm assigned
             const existingNode = db.getCoreNodeByTwitterId(user.twitter_id);
             if (!existingNode) {
+                employees.set(user.twitter_id, user);
+            } else if (!existingNode.firm || existingNode.firm !== firmId) {
+                // Already a core node but not assigned to this firm - still show it
+                user._existingCoreNode = true;
                 employees.set(user.twitter_id, user);
             }
         }
     }
     
-    console.log(`👥 Found ${employees.size} potential employees (not already tracked):\n`);
+    // Also search core_nodes table directly (they may have bio from users join)
+    const coreNodesWithBios = db.db.prepare(`
+        SELECT cn.*, u.bio 
+        FROM core_nodes cn 
+        LEFT JOIN users u ON cn.twitter_id = u.twitter_id
+        WHERE (cn.firm IS NULL OR cn.firm != ?) 
+        AND u.bio IS NOT NULL AND u.bio != ""
+    `).all(firmId);
+    
+    for (const node of coreNodesWithBios) {
+        if (firm.bioKeywords.some(kw => keywordMatches(node.bio, kw))) {
+            if (!employees.has(node.twitter_id)) {
+                node._existingCoreNode = true;
+                employees.set(node.twitter_id, node);
+            }
+        }
+    }
+    
+    console.log(`👥 Found ${employees.size} potential employees:\n`);
     
     for (const [twitterId, user] of employees) {
-        console.log(`  @${user.username} - ${user.display_name}`);
+        const marker = user._existingCoreNode ? '🔗 (already core node)' : '✨ (new)';
+        console.log(`  ${marker} @${user.username} - ${user.display_name}`);
         console.log(`     ${user.bio?.substring(0, 80)}...`);
         console.log(`     https://x.com/${user.username}\n`);
     }
@@ -282,8 +391,10 @@ Examples:
   node manage_firms.js --assign
   node manage_firms.js --discover a16z
   node manage_firms.js --add 8vc
+  node manage_firms.js --add-manual accel nafisjamal   # Add user by username
   node manage_firms.js --reset accel         # Fix false positives
   node manage_firms.js --stats
+  node manage_firms.js --test accel "Partner @Accel"   # Debug keyword matching
 `);
         process.exit(0);
     }
@@ -337,6 +448,30 @@ Examples:
             process.exit(1);
         }
         await resetFirm(firmId);
+        process.exit(0);
+    }
+    
+    const testIdx = args.indexOf('--test');
+    if (testIdx !== -1) {
+        const firmId = args[testIdx + 1];
+        const bio = args[testIdx + 2];
+        if (!firmId || !bio) {
+            console.error('Usage: --test <firmId> "<bio text>"');
+            process.exit(1);
+        }
+        testKeywordMatch(bio, firmId);
+        process.exit(0);
+    }
+    
+    const addManualIdx = args.indexOf('--add-manual');
+    if (addManualIdx !== -1) {
+        const firmId = args[addManualIdx + 1];
+        const username = args[addManualIdx + 2];
+        if (!firmId || !username) {
+            console.error('Usage: --add-manual <firmId> <username>');
+            process.exit(1);
+        }
+        await addManualEmployee(firmId, username);
         process.exit(0);
     }
     
