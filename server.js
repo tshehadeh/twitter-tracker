@@ -243,8 +243,136 @@ app.get('/api/counts', (req, res) => {
 });
 
 // ============================================
+// FIRM DEFINITIONS
+// ============================================
+const FIRMS = {
+    'a16z': { name: 'Andreessen Horowitz' },
+    '8vc': { name: '8VC' },
+    'sequoia': { name: 'Sequoia' },
+    'founders': { name: 'Founders Fund' },
+    'greylock': { name: 'Greylock' },
+    'lightspeed': { name: 'Lightspeed' },
+    'accel': { name: 'Accel' },
+    'bessemer': { name: 'Bessemer' },
+    'index': { name: 'Index Ventures' },
+    'thrive': { name: 'Thrive Capital' },
+    'general': { name: 'General Catalyst' },
+    'bain': { name: 'Bain Capital Ventures' },
+};
+
+// ============================================
 // NEW FOLLOWS API ROUTES
 // ============================================
+
+// API: Get list of firms (with member counts from database)
+app.get('/api/firms', (req, res) => {
+    try {
+        const firmsFromDb = db.getFirmsWithCounts();
+        const firms = Object.entries(FIRMS).map(([id, data]) => {
+            const dbData = firmsFromDb.find(f => f.firm === id) || { node_count: 0, active_count: 0 };
+            return { 
+                id, 
+                ...data, 
+                memberCount: dbData.node_count,
+                activeCount: dbData.active_count
+            };
+        });
+        res.json({ firms });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// API: Get members of a firm
+app.get('/api/firms/:firmId/members', (req, res) => {
+    const { firmId } = req.params;
+    const firm = FIRMS[firmId];
+    
+    if (!firm) {
+        return res.status(404).json({ error: 'Firm not found' });
+    }
+    
+    try {
+        const members = db.getCoreNodesByFirm(firmId);
+        res.json({ firm: { id: firmId, ...firm }, members });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// API: Add a member to a firm
+app.post('/api/firms/:firmId/members', (req, res) => {
+    const { firmId } = req.params;
+    const { username } = req.body;
+    
+    if (!FIRMS[firmId]) {
+        return res.status(404).json({ error: 'Firm not found' });
+    }
+    
+    if (!username) {
+        return res.status(400).json({ error: 'username required' });
+    }
+    
+    try {
+        db.assignCoreNodeToFirmByUsername(username, firmId);
+        res.json({ success: true });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// API: Get new follows for a specific firm
+app.get('/api/new-follows/firm/:firmId', (req, res) => {
+    const { firmId } = req.params;
+    const firm = FIRMS[firmId];
+    
+    if (!firm) {
+        return res.status(404).json({ error: 'Firm not found' });
+    }
+    
+    try {
+        const newFollows = db.getNewFollowsByFirm(firmId);
+        const stats = { 
+            total: newFollows.length,
+            unreviewed: newFollows.filter(nf => !nf.reviewed).length 
+        };
+        res.json({ firm: { id: firmId, ...firm }, newFollows, stats });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// API: Get next unreviewed new follow for a firm
+app.get('/api/new-follows/firm/:firmId/next', (req, res) => {
+    const { firmId } = req.params;
+    const firm = FIRMS[firmId];
+    
+    if (!firm) {
+        return res.status(404).json({ error: 'Firm not found' });
+    }
+    
+    try {
+        const newFollow = db.getNextNewFollowByFirm(firmId);
+        const allForFirm = db.getNewFollowsByFirm(firmId);
+        const stats = { 
+            total: allForFirm.length,
+            unreviewed: allForFirm.filter(nf => !nf.reviewed).length 
+        };
+        
+        if (!newFollow) {
+            return res.json({ 
+                newFollow: null, 
+                message: `All ${firm.name} follows reviewed`,
+                stats,
+                firm: { id: firmId, ...firm }
+            });
+        }
+        
+        res.json({ newFollow, stats, firm: { id: firmId, ...firm } });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
 
 // API: Get all unreviewed new follows
 app.get('/api/new-follows', (req, res) => {
@@ -398,6 +526,49 @@ app.get('/api/core-nodes', (req, res) => {
     try {
         const coreNodes = db.getAllCoreNodes();
         res.json({ coreNodes });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// API: Get core nodes with stats (leaderboard)
+app.get('/api/core-nodes/stats', (req, res) => {
+    try {
+        const coreNodes = db.getAllCoreNodesWithStats();
+        res.json({ coreNodes });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// API: Get single core node stats by username
+app.get('/api/core-nodes/username/:username', (req, res) => {
+    try {
+        const coreNode = db.getCoreNodeByUsername(req.params.username);
+        if (!coreNode) {
+            return res.status(404).json({ error: 'Core node not found' });
+        }
+        res.json({ coreNode });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// API: Stop tracking a core node
+app.post('/api/core-nodes/:id/stop', (req, res) => {
+    try {
+        db.stopTrackingCoreNode(parseInt(req.params.id));
+        res.json({ success: true });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// API: Resume tracking a core node
+app.post('/api/core-nodes/:id/resume', (req, res) => {
+    try {
+        db.resumeTrackingCoreNode(parseInt(req.params.id));
+        res.json({ success: true });
     } catch (error) {
         res.status(500).json({ error: error.message });
     }

@@ -4,6 +4,8 @@ let currentUser = null;
 let currentNewFollow = null;
 let currentView = 'welcome';
 let currentDate = null; // For date-based new follows filtering
+let currentFirm = null; // For firm-based new follows filtering
+let firms = []; // List of available firms
 let groupedNewFollows = []; // List of grouped follows for current date
 let currentGroupedIndex = 0; // Current position in grouped list
 
@@ -58,6 +60,7 @@ const elements = {
     // New Follows elements
     newFollowsBtn: document.getElementById('new-follows-btn'),
     countNewFollows: document.getElementById('count-new-follows'),
+    firmTabs: document.getElementById('firm-tabs'),
     dateTabs: document.getElementById('date-tabs'),
     nfUnreviewedCount: document.getElementById('nf-unreviewed-count'),
     nfTotalCount: document.getElementById('nf-total-count'),
@@ -66,6 +69,7 @@ const elements = {
     nfEmptyCard: document.getElementById('nf-empty-card'),
     nfLoadingCard: document.getElementById('nf-loading-card'),
     nfCoreNode: document.getElementById('nf-core-node'),
+    nfCoreNodeStats: document.getElementById('nf-core-node-stats'),
     nfAvatar: document.getElementById('nf-avatar'),
     nfDisplayName: document.getElementById('nf-display-name'),
     nfUsername: document.getElementById('nf-username'),
@@ -396,6 +400,117 @@ function goBack() {
 // NEW FOLLOWS FUNCTIONS
 // ============================================
 
+// Load firms list
+async function loadFirms() {
+    try {
+        const { firms: firmList } = await api('/firms');
+        firms = firmList || [];
+    } catch (error) {
+        console.error('Error loading firms:', error);
+        firms = [];
+    }
+}
+
+// Render firm tabs
+function renderFirmTabs() {
+    const allTab = `<button class="firm-tab ${!currentFirm ? 'active' : ''}" data-firm="">All</button>`;
+    const firmTabsHtml = firms
+        .filter(f => f.memberCount > 0) // Only show firms with members
+        .map(f => `
+            <button class="firm-tab ${currentFirm === f.id ? 'active' : ''}" data-firm="${f.id}">
+                ${f.name} <span class="firm-count">(${f.memberCount})</span>
+            </button>
+        `).join('');
+    
+    elements.firmTabs.innerHTML = allTab + firmTabsHtml;
+    
+    // Add click handlers
+    elements.firmTabs.querySelectorAll('.firm-tab').forEach(tab => {
+        tab.addEventListener('click', () => selectFirm(tab.dataset.firm || null));
+    });
+}
+
+// Select a firm tab
+async function selectFirm(firmId) {
+    currentFirm = firmId;
+    currentDate = null; // Reset date when changing firm
+    renderFirmTabs();
+    showNfLoading(true);
+    
+    if (firmId) {
+        // Load firm-specific follows
+        await loadFirmNewFollows(firmId);
+    } else {
+        // Load all follows (date-based)
+        const { byDate } = await loadNewFollowsStats();
+        if (byDate && byDate.length > 0) {
+            const dateWithUnreviewed = byDate.find(d => d.unreviewed > 0);
+            currentDate = dateWithUnreviewed ? dateWithUnreviewed.date : byDate[0].date;
+        }
+        renderDateTabs(byDate);
+        await loadNextNewFollow();
+    }
+}
+
+// Load new follows for a specific firm
+async function loadFirmNewFollows(firmId) {
+    try {
+        const { newFollows, stats, firm } = await api(`/new-follows/firm/${firmId}`);
+        
+        // Hide date tabs when viewing firm, show member count
+        elements.dateTabs.innerHTML = `<span style="color: var(--text-muted); font-size: 12px;">${firm.name} • ${firm.memberCount || 0} accounts tracked</span>`;
+        
+        // Update stats
+        elements.nfUnreviewedCount.textContent = stats.unreviewed || 0;
+        elements.nfTotalCount.textContent = stats.total || 0;
+        
+        // Convert to grouped format (group by followed user)
+        const userMap = new Map();
+        newFollows.forEach(nf => {
+            const key = nf.followed_user_db_id;
+            if (!userMap.has(key)) {
+                userMap.set(key, {
+                    user_id: nf.followed_user_db_id,
+                    username: nf.followed_username,
+                    display_name: nf.followed_display_name,
+                    bio: nf.followed_bio,
+                    followers_count: nf.followed_followers,
+                    following_count: nf.followed_following,
+                    profile_image_url: nf.followed_avatar,
+                    verified: nf.followed_verified,
+                    existing_category: nf.existing_category,
+                    followed_by_usernames: [],
+                    follow_count: 0,
+                    reviewed: nf.reviewed
+                });
+            }
+            const user = userMap.get(key);
+            user.followed_by_usernames.push(nf.core_node_username);
+            user.follow_count++;
+        });
+        
+        // Convert to array and sort by follow count
+        groupedNewFollows = Array.from(userMap.values())
+            .filter(u => !u.reviewed || u.reviewed === 0)
+            .sort((a, b) => b.follow_count - a.follow_count);
+        currentGroupedIndex = 0;
+        
+        if (groupedNewFollows.length === 0) {
+            elements.nfLoadingCard.style.display = 'none';
+            elements.nfCard.style.display = 'none';
+            elements.nfEmptyCard.style.display = 'block';
+            disableNfActionButtons(true);
+            return;
+        }
+        
+        displayGroupedNewFollow(groupedNewFollows[0]);
+        disableNfActionButtons(false);
+        
+    } catch (error) {
+        console.error('Error loading firm new follows:', error);
+    }
+}
+
 // Load new follows stats and update badge
 async function loadNewFollowsStats() {
     try {
@@ -462,19 +577,30 @@ async function showNewFollowsView() {
     showView('newFollows');
     showNfLoading(true);
     
-    // Load stats and date tabs
-    const { byDate } = await loadNewFollowsStats();
-    
-    // Auto-select first date with unreviewed items, or just first date
-    if (byDate && byDate.length > 0) {
-        const dateWithUnreviewed = byDate.find(d => d.unreviewed > 0);
-        currentDate = dateWithUnreviewed ? dateWithUnreviewed.date : byDate[0].date;
-    } else {
-        currentDate = null;
+    // Load firms if not loaded
+    if (firms.length === 0) {
+        await loadFirms();
     }
+    renderFirmTabs();
     
-    renderDateTabs(byDate);
-    await loadNextNewFollow();
+    // If a firm is selected, load firm follows, otherwise load date-based
+    if (currentFirm) {
+        await loadFirmNewFollows(currentFirm);
+    } else {
+        // Load stats and date tabs
+        const { byDate } = await loadNewFollowsStats();
+        
+        // Auto-select first date with unreviewed items, or just first date
+        if (byDate && byDate.length > 0) {
+            const dateWithUnreviewed = byDate.find(d => d.unreviewed > 0);
+            currentDate = dateWithUnreviewed ? dateWithUnreviewed.date : byDate[0].date;
+        } else {
+            currentDate = null;
+        }
+        
+        renderDateTabs(byDate);
+        await loadNextNewFollow();
+    }
 }
 
 // Show/hide loading for new follows
@@ -537,7 +663,7 @@ async function loadNextNewFollow() {
 }
 
 // Display grouped new follow card
-function displayGroupedNewFollow(gf) {
+async function displayGroupedNewFollow(gf) {
     showNfLoading(false);
     
     const avatarUrl = gf.profile_image_url 
@@ -564,6 +690,14 @@ function displayGroupedNewFollow(gf) {
     const badgeClass = gf.follow_count >= 3 ? 'follow-count-badge high' : 'follow-count-badge';
     elements.nfCoreNode.innerHTML = `<span class="${badgeClass}">${gf.follow_count}</span> ${followedByText}`;
     
+    // Show existing category badge if already categorized
+    if (gf.existing_category) {
+        elements.nfCoreNode.innerHTML += ` <span class="category-badge ${gf.existing_category}">(${gf.existing_category})</span>`;
+    }
+    
+    // Fetch and display core node stats
+    await displayCoreNodeStats(usernames);
+    
     elements.nfAvatar.src = avatarUrl;
     elements.nfAvatar.onerror = () => {
         elements.nfAvatar.src = 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect fill="%23333" width="100" height="100"/><text x="50" y="60" font-size="40" text-anchor="middle" fill="%23666">?</text></svg>';
@@ -579,6 +713,57 @@ function displayGroupedNewFollow(gf) {
     
     // Store current for categorization
     currentNewFollow = gf;
+}
+
+// Display core node stats badges
+async function displayCoreNodeStats(usernames) {
+    if (!usernames || usernames.length === 0) {
+        elements.nfCoreNodeStats.innerHTML = '';
+        return;
+    }
+    
+    // Fetch stats for each core node (limit to first 5 to avoid too many requests)
+    const statsToShow = usernames.slice(0, 5);
+    const statsHtml = [];
+    
+    for (const username of statsToShow) {
+        try {
+            const { coreNode } = await api(`/core-nodes/username/${username}`);
+            if (coreNode && coreNode.total_categorized > 0) {
+                const passRateClass = coreNode.pass_rate > 70 ? 'bad' : coreNode.pass_rate < 30 ? 'good' : '';
+                statsHtml.push(`
+                    <span class="core-node-stat" data-core-node-id="${coreNode.id}">
+                        <span class="username">@${coreNode.username}</span>
+                        <span class="rate ${passRateClass}">${coreNode.track_rate}% track / ${coreNode.pass_rate}% pass</span>
+                        <button class="stop-btn" title="Stop tracking @${coreNode.username}" onclick="stopTrackingCoreNode(${coreNode.id}, '${coreNode.username}')">×</button>
+                    </span>
+                `);
+            }
+        } catch (e) {
+            // Core node not found, skip
+        }
+    }
+    
+    elements.nfCoreNodeStats.innerHTML = statsHtml.join('');
+}
+
+// Stop tracking a core node
+async function stopTrackingCoreNode(id, username) {
+    if (!confirm(`Stop tracking @${username}? They will be excluded from future scrapes.`)) {
+        return;
+    }
+    
+    try {
+        await api(`/core-nodes/${id}/stop`, { method: 'POST' });
+        // Remove from display
+        const badge = document.querySelector(`.core-node-stat[data-core-node-id="${id}"]`);
+        if (badge) {
+            badge.style.opacity = '0.5';
+            badge.innerHTML = `<span class="username">@${username}</span> <span class="rate">(stopped)</span>`;
+        }
+    } catch (error) {
+        console.error('Error stopping core node:', error);
+    }
 }
 
 // Legacy display function

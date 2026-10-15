@@ -65,7 +65,12 @@ db.exec(`
         following_count INTEGER DEFAULT 0,
         followers_count INTEGER DEFAULT 0,
         last_scraped_at DATETIME,
-        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        outbound_count INTEGER DEFAULT 0,
+        track_count INTEGER DEFAULT 0,
+        pass_count INTEGER DEFAULT 0,
+        is_active INTEGER DEFAULT 1,
+        firm TEXT DEFAULT NULL
     );
 
     -- Historical follows (who follows whom)
@@ -99,6 +104,23 @@ db.exec(`
     CREATE INDEX IF NOT EXISTS idx_new_follows_reviewed ON new_follows(reviewed);
     CREATE INDEX IF NOT EXISTS idx_new_follows_detected ON new_follows(detected_at);
 `);
+
+// Migration: Add new columns to core_nodes if they don't exist
+try {
+    db.exec(`ALTER TABLE core_nodes ADD COLUMN outbound_count INTEGER DEFAULT 0`);
+} catch (e) { /* Column already exists */ }
+try {
+    db.exec(`ALTER TABLE core_nodes ADD COLUMN track_count INTEGER DEFAULT 0`);
+} catch (e) { /* Column already exists */ }
+try {
+    db.exec(`ALTER TABLE core_nodes ADD COLUMN pass_count INTEGER DEFAULT 0`);
+} catch (e) { /* Column already exists */ }
+try {
+    db.exec(`ALTER TABLE core_nodes ADD COLUMN is_active INTEGER DEFAULT 1`);
+} catch (e) { /* Column already exists */ }
+try {
+    db.exec(`ALTER TABLE core_nodes ADD COLUMN firm TEXT DEFAULT NULL`);
+} catch (e) { /* Column already exists */ }
 
 // Prepared statements for performance
 const statements = {
@@ -553,8 +575,12 @@ const dbFunctions = {
         return statements.getGroupedNewFollowsStats.get(date) || { unique_users: 0, total_follows: 0, unreviewed: 0 };
     },
     
-    // Categorize all new follows for a specific user
+    // Categorize all new follows for a specific user (and update core node counters)
     categorizeNewFollowsByUserId(userId, category) {
+        // First increment counters for all core nodes who had this user in unreviewed new_follows
+        this.incrementCountersForFollowedUser(userId, category);
+        
+        // Then mark as reviewed
         return statements.categorizeNewFollowsByUserId.run(category, userId);
     },
     
@@ -566,6 +592,196 @@ const dbFunctions = {
             });
         });
         insertMany(nodes);
+    },
+    
+    // Get new follows for a specific firm (by firm field)
+    getNewFollowsByFirm(firmId) {
+        return db.prepare(`
+            SELECT nf.*, 
+                   cn.username as core_node_username, cn.display_name as core_node_display_name,
+                   cn.firm as core_node_firm,
+                   u.username as followed_username, u.display_name as followed_display_name,
+                   u.bio as followed_bio, u.followers_count as followed_followers,
+                   u.following_count as followed_following, u.profile_image_url as followed_avatar,
+                   u.verified as followed_verified, u.id as followed_user_db_id,
+                   c.category as existing_category
+            FROM new_follows nf
+            JOIN core_nodes cn ON nf.core_node_id = cn.id
+            JOIN users u ON nf.followed_user_id = u.id
+            LEFT JOIN categorizations c ON u.id = c.user_id
+            WHERE cn.firm = ?
+            ORDER BY nf.detected_at DESC
+        `).all(firmId);
+    },
+    
+    // Get next unreviewed new follow for a firm
+    getNextNewFollowByFirm(firmId) {
+        return db.prepare(`
+            SELECT nf.*, 
+                   cn.username as core_node_username, cn.display_name as core_node_display_name,
+                   cn.firm as core_node_firm,
+                   u.username as followed_username, u.display_name as followed_display_name,
+                   u.bio as followed_bio, u.followers_count as followed_followers,
+                   u.following_count as followed_following, u.profile_image_url as followed_avatar,
+                   u.verified as followed_verified, u.id as followed_user_db_id,
+                   c.category as existing_category
+            FROM new_follows nf
+            JOIN core_nodes cn ON nf.core_node_id = cn.id
+            JOIN users u ON nf.followed_user_id = u.id
+            LEFT JOIN categorizations c ON u.id = c.user_id
+            WHERE nf.reviewed = 0 AND cn.firm = ?
+            ORDER BY nf.detected_at DESC
+            LIMIT 1
+        `).get(firmId);
+    },
+    
+    // Get core nodes by firm
+    getCoreNodesByFirm(firmId) {
+        return db.prepare(`
+            SELECT * FROM core_nodes 
+            WHERE firm = ? AND is_active = 1
+            ORDER BY followers_count DESC
+        `).all(firmId);
+    },
+    
+    // Get all firms with counts
+    getFirmsWithCounts() {
+        return db.prepare(`
+            SELECT 
+                firm,
+                COUNT(*) as node_count,
+                SUM(CASE WHEN is_active = 1 THEN 1 ELSE 0 END) as active_count
+            FROM core_nodes 
+            WHERE firm IS NOT NULL
+            GROUP BY firm
+            ORDER BY node_count DESC
+        `).all();
+    },
+    
+    // Assign a core node to a firm
+    assignCoreNodeToFirm(coreNodeId, firmId) {
+        return db.prepare(`UPDATE core_nodes SET firm = ? WHERE id = ?`).run(firmId, coreNodeId);
+    },
+    
+    // Assign core node to firm by username
+    assignCoreNodeToFirmByUsername(username, firmId) {
+        return db.prepare(`UPDATE core_nodes SET firm = ? WHERE LOWER(username) = LOWER(?)`).run(firmId, username);
+    },
+    
+    // Add a new core node with firm
+    addCoreNodeWithFirm(twitterId, username, displayName, followingCount, followersCount, firmId) {
+        return db.prepare(`
+            INSERT INTO core_nodes (twitter_id, username, display_name, following_count, followers_count, firm)
+            VALUES (?, ?, ?, ?, ?, ?)
+            ON CONFLICT(twitter_id) DO UPDATE SET
+                username = excluded.username,
+                display_name = excluded.display_name,
+                following_count = excluded.following_count,
+                followers_count = excluded.followers_count,
+                firm = excluded.firm
+        `).run(twitterId, username, displayName, followingCount, followersCount, firmId);
+    },
+    
+    // Increment core node category counter
+    incrementCoreNodeCounter(coreNodeId, category) {
+        const column = `${category}_count`;
+        db.prepare(`UPDATE core_nodes SET ${column} = ${column} + 1 WHERE id = ?`).run(coreNodeId);
+    },
+    
+    // Increment counters for all core nodes who followed a user
+    incrementCountersForFollowedUser(followedUserId, category) {
+        // Find all core_nodes who have this user in their new_follows
+        const coreNodes = db.prepare(`
+            SELECT DISTINCT core_node_id FROM new_follows WHERE followed_user_id = ?
+        `).all(followedUserId);
+        
+        const column = `${category}_count`;
+        coreNodes.forEach(cn => {
+            db.prepare(`UPDATE core_nodes SET ${column} = ${column} + 1 WHERE id = ?`).run(cn.core_node_id);
+        });
+        
+        return coreNodes.length;
+    },
+    
+    // Stop tracking a core node
+    stopTrackingCoreNode(coreNodeId) {
+        db.prepare(`UPDATE core_nodes SET is_active = 0 WHERE id = ?`).run(coreNodeId);
+    },
+    
+    // Resume tracking a core node
+    resumeTrackingCoreNode(coreNodeId) {
+        db.prepare(`UPDATE core_nodes SET is_active = 1 WHERE id = ?`).run(coreNodeId);
+    },
+    
+    // Get core node by ID with stats
+    getCoreNodeWithStats(coreNodeId) {
+        return db.prepare(`
+            SELECT *, 
+                   (outbound_count + track_count + pass_count) as total_categorized,
+                   CASE WHEN (outbound_count + track_count + pass_count) > 0 
+                        THEN ROUND(100.0 * track_count / (outbound_count + track_count + pass_count), 1)
+                        ELSE 0 END as track_rate,
+                   CASE WHEN (outbound_count + track_count + pass_count) > 0 
+                        THEN ROUND(100.0 * pass_count / (outbound_count + track_count + pass_count), 1)
+                        ELSE 0 END as pass_rate
+            FROM core_nodes WHERE id = ?
+        `).get(coreNodeId);
+    },
+    
+    // Get core node by username
+    getCoreNodeByUsername(username) {
+        return db.prepare(`
+            SELECT *, 
+                   (outbound_count + track_count + pass_count) as total_categorized,
+                   CASE WHEN (outbound_count + track_count + pass_count) > 0 
+                        THEN ROUND(100.0 * track_count / (outbound_count + track_count + pass_count), 1)
+                        ELSE 0 END as track_rate,
+                   CASE WHEN (outbound_count + track_count + pass_count) > 0 
+                        THEN ROUND(100.0 * pass_count / (outbound_count + track_count + pass_count), 1)
+                        ELSE 0 END as pass_rate
+            FROM core_nodes WHERE LOWER(username) = LOWER(?)
+        `).get(username);
+    },
+    
+    // Get all core nodes with stats (for leaderboard)
+    getAllCoreNodesWithStats() {
+        return db.prepare(`
+            SELECT *, 
+                   (outbound_count + track_count + pass_count) as total_categorized,
+                   CASE WHEN (outbound_count + track_count + pass_count) > 0 
+                        THEN ROUND(100.0 * track_count / (outbound_count + track_count + pass_count), 1)
+                        ELSE 0 END as track_rate,
+                   CASE WHEN (outbound_count + track_count + pass_count) > 0 
+                        THEN ROUND(100.0 * pass_count / (outbound_count + track_count + pass_count), 1)
+                        ELSE 0 END as pass_rate
+            FROM core_nodes 
+            ORDER BY total_categorized DESC
+        `).all();
+    },
+
+    // Get next unreviewed new follow for a firm
+    getNextNewFollowByFirm(keywords) {
+        const whereClauses = keywords.map(() => `LOWER(cn.username) LIKE ? OR LOWER(cn.display_name) LIKE ?`).join(' OR ');
+        const params = keywords.flatMap(k => [`%${k.toLowerCase()}%`, `%${k.toLowerCase()}%`]);
+        
+        const query = `
+            SELECT nf.*, 
+                   cn.username as core_node_username, cn.display_name as core_node_display_name,
+                   u.username as followed_username, u.display_name as followed_display_name,
+                   u.bio as followed_bio, u.followers_count as followed_followers,
+                   u.following_count as followed_following, u.profile_image_url as followed_avatar,
+                   u.verified as followed_verified, u.id as followed_user_db_id,
+                   c.category as existing_category
+            FROM new_follows nf
+            JOIN core_nodes cn ON nf.core_node_id = cn.id
+            JOIN users u ON nf.followed_user_id = u.id
+            LEFT JOIN categorizations c ON u.id = c.user_id
+            WHERE nf.reviewed = 0 AND (${whereClauses})
+            ORDER BY nf.detected_at DESC
+            LIMIT 1
+        `;
+        
+        return db.prepare(query).get(...params);
     },
 };
 

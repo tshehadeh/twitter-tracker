@@ -133,8 +133,19 @@ async function nightlyScrape() {
     log('========================================');
     
     // Load core nodes
-    const coreNodes = loadCoreNodesFromFile();
+    let coreNodes = loadCoreNodesFromFile();
     log(`Loaded ${coreNodes.length} core nodes from ${CORE_NODES_FILE}`);
+    
+    // Filter out inactive core nodes
+    const inactiveNodes = new Set();
+    const dbNodes = db.db.prepare('SELECT twitter_id FROM core_nodes WHERE is_active = 0').all();
+    dbNodes.forEach(n => inactiveNodes.add(n.twitter_id));
+    
+    const originalCount = coreNodes.length;
+    coreNodes = coreNodes.filter(n => !inactiveNodes.has(n.user_id));
+    if (coreNodes.length < originalCount) {
+        log(`Skipping ${originalCount - coreNodes.length} inactive core nodes`);
+    }
     
     // Process each core node
     let totalNew = 0;

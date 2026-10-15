@@ -160,6 +160,13 @@
                     <button id="nf-back-btn" class="back-btn">&larr; Back</button>
                 </div>
                 
+                <!-- Firm Tabs -->
+                <div class="firm-tabs-container">
+                    <div id="firm-tabs" class="firm-tabs">
+                        <!-- Firm tabs populated by JS -->
+                    </div>
+                </div>
+                
                 <!-- Date Tabs -->
                 <div class="date-tabs-container">
                     <div id="date-tabs" class="date-tabs">
@@ -171,9 +178,12 @@
                 <div class="card-container">
                     <div id="nf-card" class="user-card new-follow-card">
                         <div class="followed-by-header">
-                            <span class="followed-by-text">
-                                <strong id="nf-core-node">@username</strong> started following
-                            </span>
+                            <div class="followed-by-text">
+                                <span id="nf-core-node">@username started following</span>
+                            </div>
+                            <div id="nf-core-node-stats" class="core-node-stats">
+                                <!-- Core node hit rates shown here -->
+                            </div>
                         </div>
                         <div class="card-header">
                             <img id="nf-avatar" class="card-avatar" src="" alt="">
