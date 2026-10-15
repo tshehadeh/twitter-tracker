@@ -12,7 +12,8 @@ pm2 delete tracker-scrape 2>/dev/null || true
 pm2 start server.js --name tracker-web
 
 # Start nightly scraper (runs at midnight UTC)
-pm2 start scrape_follows.js --name tracker-scrape --cron "0 0 * * *" --no-autorestart
+# Midnight PT = 7 AM UTC (PDT) / 8 AM UTC (PST)
+pm2 start scrape_follows.js --name tracker-scrape --cron "0 7 * * *" --no-autorestart
 
 # Save PM2 config
 pm2 save
