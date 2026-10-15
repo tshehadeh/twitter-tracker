@@ -28,7 +28,32 @@ function sleep(ms) {
     return new Promise(resolve => setTimeout(resolve, ms));
 }
 
-// Load core nodes from JSON file
+// Load core nodes from DATABASE (preferred) or JSON file (fallback)
+function loadCoreNodes() {
+    // First, try to load from database
+    const dbNodes = db.db.prepare(`
+        SELECT twitter_id as user_id, username, display_name, 
+               followers_count, following_count, firm
+        FROM core_nodes 
+        WHERE is_active = 1
+        ORDER BY firm, username
+    `).all();
+    
+    if (dbNodes.length > 0) {
+        log(`Loaded ${dbNodes.length} core nodes from DATABASE`);
+        return dbNodes;
+    }
+    
+    // Fallback to JSON file
+    if (!fs.existsSync(CORE_NODES_FILE)) {
+        throw new Error(`No core nodes in database and file not found: ${CORE_NODES_FILE}`);
+    }
+    const data = JSON.parse(fs.readFileSync(CORE_NODES_FILE, 'utf8'));
+    log(`Loaded ${data.following.length} core nodes from JSON file (fallback)`);
+    return data.following;
+}
+
+// Legacy function for backwards compatibility
 function loadCoreNodesFromFile() {
     if (!fs.existsSync(CORE_NODES_FILE)) {
         throw new Error(`Core nodes file not found: ${CORE_NODES_FILE}`);
@@ -132,20 +157,18 @@ async function nightlyScrape() {
     log('Starting nightly scrape...');
     log('========================================');
     
-    // Load core nodes
-    let coreNodes = loadCoreNodesFromFile();
-    log(`Loaded ${coreNodes.length} core nodes from ${CORE_NODES_FILE}`);
+    // Load core nodes from database (or JSON fallback)
+    let coreNodes = loadCoreNodes();
     
-    // Filter out inactive core nodes
-    const inactiveNodes = new Set();
-    const dbNodes = db.db.prepare('SELECT twitter_id FROM core_nodes WHERE is_active = 0').all();
-    dbNodes.forEach(n => inactiveNodes.add(n.twitter_id));
+    // Group by firm for logging
+    const firmCounts = {};
+    coreNodes.forEach(n => {
+        const firm = n.firm || 'unassigned';
+        firmCounts[firm] = (firmCounts[firm] || 0) + 1;
+    });
+    log(`Core nodes by firm: ${JSON.stringify(firmCounts)}`);
     
-    const originalCount = coreNodes.length;
-    coreNodes = coreNodes.filter(n => !inactiveNodes.has(n.user_id));
-    if (coreNodes.length < originalCount) {
-        log(`Skipping ${originalCount - coreNodes.length} inactive core nodes`);
-    }
+    // No need to filter inactive - loadCoreNodes already does that
     
     // Process each core node
     let totalNew = 0;
@@ -200,17 +223,40 @@ async function main() {
 Nightly Follow Scraper
 
 Usage:
-  node scrape_follows.js                    # Run full nightly scrape
+  node scrape_follows.js                    # Run full nightly scrape (all firms)
+  node scrape_follows.js --firm <name>      # Scrape only one firm's core nodes
   node scrape_follows.js --test             # Test with first 3 accounts only
   node scrape_follows.js --user <username>  # Scrape a specific user
   node scrape_follows.js --init             # Initialize core nodes in database only
+  node scrape_follows.js --list             # List all core nodes by firm
 
 Options:
+  --firm <name>    Scrape only core nodes belonging to a specific firm
   --test           Run a test scrape with only first 3 accounts
   --user <name>    Scrape a specific user by username (without @)
   --init           Load core nodes into database without scraping
+  --list           List all core nodes grouped by firm
   --help           Show this help message
 `);
+        process.exit(0);
+    }
+    
+    if (args.includes('--list')) {
+        const nodes = db.db.prepare(`
+            SELECT firm, COUNT(*) as count 
+            FROM core_nodes 
+            WHERE is_active = 1 
+            GROUP BY firm 
+            ORDER BY count DESC
+        `).all();
+        
+        console.log('\nCore nodes by firm:');
+        console.log('─'.repeat(40));
+        nodes.forEach(n => {
+            console.log(`  ${(n.firm || 'unassigned').padEnd(20)} ${n.count} members`);
+        });
+        console.log('─'.repeat(40));
+        console.log(`  Total: ${nodes.reduce((sum, n) => sum + n.count, 0)} core nodes`);
         process.exit(0);
     }
     
@@ -257,9 +303,49 @@ Options:
         process.exit(0);
     }
     
+    // Handle --firm <name> flag
+    const firmIndex = args.indexOf('--firm');
+    if (firmIndex !== -1) {
+        const firmName = args[firmIndex + 1];
+        if (!firmName) {
+            console.error('Error: --firm requires a firm name argument');
+            process.exit(1);
+        }
+        
+        log(`Scraping firm: ${firmName}`);
+        
+        const firmNodes = db.db.prepare(`
+            SELECT twitter_id as user_id, username, display_name, 
+                   followers_count, following_count, firm
+            FROM core_nodes 
+            WHERE firm = ? AND is_active = 1
+            ORDER BY username
+        `).all(firmName);
+        
+        if (firmNodes.length === 0) {
+            console.error(`Error: No active core nodes found for firm "${firmName}"`);
+            console.log('\nAvailable firms:');
+            const firms = db.db.prepare('SELECT DISTINCT firm FROM core_nodes WHERE firm IS NOT NULL').all();
+            firms.forEach(f => console.log(`  - ${f.firm}`));
+            process.exit(1);
+        }
+        
+        log(`Found ${firmNodes.length} core nodes for ${firmName}`);
+        
+        let totalNew = 0;
+        for (let i = 0; i < firmNodes.length; i++) {
+            const result = await processCoreNode(firmNodes[i], i + 1, firmNodes.length);
+            totalNew += result.newCount || 0;
+            if (i < firmNodes.length - 1) await sleep(RATE_LIMIT_DELAY);
+        }
+        
+        log(`Firm scrape complete! ${totalNew} new follows detected.`);
+        process.exit(0);
+    }
+    
     if (args.includes('--test')) {
         log('Running TEST scrape (first 3 accounts only)...');
-        const coreNodes = loadCoreNodesFromFile().slice(0, 3);
+        const coreNodes = loadCoreNodes().slice(0, 3);
         
         for (let i = 0; i < coreNodes.length; i++) {
             await processCoreNode(coreNodes[i], i + 1, coreNodes.length);
