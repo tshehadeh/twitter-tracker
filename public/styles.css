@@ -212,12 +212,16 @@ body {
 
 /* Sessions */
 .sessions-list {
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
-    max-height: 200px;
+    display: block;
+    max-height: 160px;
     overflow-y: auto;
+    overflow-x: hidden;
     margin-bottom: var(--space-sm);
+}
+
+.sessions-list .session-item {
+    display: block;
+    margin-bottom: 2px;
 }
 
 .session-item {
