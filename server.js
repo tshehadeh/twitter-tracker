@@ -337,10 +337,10 @@ app.delete('/api/firms/:firmId/members/:memberId', (req, res) => {
     }
 });
 
-// API: Get new follows for a specific firm (with optional member filter and pagination)
+// API: Get new follows for a specific firm (with optional member/date filter and pagination)
 app.get('/api/new-follows/firm/:firmId', (req, res) => {
     const { firmId } = req.params;
-    const { member, limit = 50, offset = 0 } = req.query;
+    const { member, date, limit = 100, offset = 0 } = req.query;
     const firm = FIRMS[firmId];
     
     if (!firm) {
@@ -356,18 +356,29 @@ app.get('/api/new-follows/firm/:firmId', (req, res) => {
             newFollows = db.getNewFollowsByMember(parseInt(member), parseInt(limit), parseInt(offset));
             const memberStats = db.getNewFollowsByMemberCount(parseInt(member));
             stats = memberStats || { total: 0, unreviewed: 0 };
+        } else if (date) {
+            // Filter by date
+            newFollows = db.getNewFollowsByFirmOnDate(firmId, date, parseInt(limit), parseInt(offset));
+            // Get stats for this specific date
+            const byDate = db.getNewFollowsByFirmAndDate(firmId);
+            const dateStats = byDate.find(d => d.date === date);
+            stats = dateStats || { total: 0, unreviewed: 0, count: 0 };
         } else {
-            // Get paginated for firm
+            // Get paginated for firm (all dates)
             newFollows = db.getNewFollowsByFirm(firmId, parseInt(limit), parseInt(offset));
             const firmStats = db.getNewFollowsByFirmCount(firmId);
             stats = firmStats || { total: 0, unreviewed: 0 };
         }
+        
+        // Always include date breakdown for tabs
+        const byDate = db.getNewFollowsByFirmAndDate(firmId);
         
         const members = db.getCoreNodesByFirm(firmId);
         res.json({ 
             firm: { id: firmId, ...firm, memberCount: members.length }, 
             newFollows,
             stats,
+            byDate,
             pagination: {
                 limit: parseInt(limit),
                 offset: parseInt(offset),

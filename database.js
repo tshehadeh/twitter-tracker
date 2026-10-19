@@ -648,6 +648,42 @@ const dbFunctions = {
         `).get(firmId);
     },
     
+    // Get new follows by date for a firm (for date tabs)
+    getNewFollowsByFirmAndDate(firmId) {
+        return db.prepare(`
+            SELECT DATE(nf.detected_at) as date,
+                   COUNT(*) as count,
+                   SUM(CASE WHEN nf.reviewed = 0 THEN 1 ELSE 0 END) as unreviewed
+            FROM new_follows nf
+            JOIN core_nodes cn ON nf.core_node_id = cn.id
+            WHERE cn.firm = ?
+            GROUP BY DATE(nf.detected_at)
+            ORDER BY date DESC
+            LIMIT 30
+        `).all(firmId);
+    },
+    
+    // Get new follows for a firm filtered by date
+    getNewFollowsByFirmOnDate(firmId, date, limit = 100, offset = 0) {
+        return db.prepare(`
+            SELECT nf.*, 
+                   cn.username as core_node_username, cn.display_name as core_node_display_name,
+                   cn.firm as core_node_firm,
+                   u.username as followed_username, u.display_name as followed_display_name,
+                   u.bio as followed_bio, u.url as followed_url, u.followers_count as followed_followers,
+                   u.following_count as followed_following, u.profile_image_url as followed_avatar,
+                   u.verified as followed_verified, u.id as followed_user_db_id,
+                   c.category as existing_category
+            FROM new_follows nf
+            JOIN core_nodes cn ON nf.core_node_id = cn.id
+            JOIN users u ON nf.followed_user_id = u.id
+            LEFT JOIN categorizations c ON u.id = c.user_id
+            WHERE cn.firm = ? AND nf.reviewed = 0 AND DATE(nf.detected_at) = ?
+            ORDER BY u.followers_count DESC
+            LIMIT ? OFFSET ?
+        `).all(firmId, date, limit, offset);
+    },
+    
     // Get new follows for a specific member (core_node_id) - with pagination
     // Only returns UNREVIEWED items for faster loading
     getNewFollowsByMember(coreNodeId, limit = 50, offset = 0) {

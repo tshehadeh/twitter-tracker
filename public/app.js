@@ -6,6 +6,7 @@ let currentView = 'welcome';
 let currentDate = null; // For date-based new follows filtering
 let currentFirm = null; // For firm-based new follows filtering
 let currentMember = null; // For filtering by specific firm member
+let currentFirmDate = null; // For date filtering within a firm
 let firms = []; // List of available firms
 let firmMembers = []; // List of members for current firm
 let groupedNewFollows = []; // List of grouped follows for current date
@@ -491,6 +492,7 @@ function renderFirmTabs() {
 async function selectFirm(firmId) {
     currentFirm = firmId;
     currentMember = null; // Reset member filter
+    currentFirmDate = null; // Reset firm date when changing firm
     currentDate = null; // Reset date when changing firm
     renderFirmTabs();
     showNfLoading(true);
@@ -499,7 +501,7 @@ async function selectFirm(firmId) {
         // Show sidebar and load members
         elements.firmSidebar.style.display = 'block';
         await loadFirmMembers(firmId);
-        // Load firm-specific follows
+        // Load firm-specific follows (will also load date tabs)
         await loadFirmNewFollows(firmId);
     } else {
         // Hide sidebar
@@ -514,6 +516,19 @@ async function selectFirm(firmId) {
         renderDateTabs(byDate);
         await loadNextNewFollow();
     }
+}
+
+// Select a date within a firm
+async function selectFirmDate(date) {
+    currentFirmDate = date;
+    currentMember = null; // Reset member filter when selecting date
+    // Update sidebar to show all members (deselect any selected member)
+    elements.sidebarShowAll.classList.add('active');
+    elements.firmMembersList.querySelectorAll('.member-item').forEach(item => {
+        item.classList.remove('selected');
+    });
+    showNfLoading(true);
+    await loadFirmNewFollows(currentFirm);
 }
 
 // Load firm members for sidebar
@@ -594,6 +609,7 @@ async function selectMember(memberId) {
         currentMember = null;
     } else {
         currentMember = memberId;
+        currentFirmDate = null; // Reset date filter when selecting member
     }
     renderFirmMembers();
     showNfLoading(true);
@@ -662,24 +678,26 @@ async function addMemberToFirm(username) {
 // Load new follows for a specific firm
 async function loadFirmNewFollows(firmId) {
     try {
-        // Build URL with optional member filter and pagination
+        // Build URL with optional member/date filter and pagination
         let url = `/new-follows/firm/${firmId}?limit=100`;
         if (currentMember) {
             url += `&member=${currentMember}`;
+        } else if (currentFirmDate) {
+            url += `&date=${currentFirmDate}`;
         }
-        const { newFollows, stats, firm, pagination } = await api(url);
+        const { newFollows, stats, firm, byDate, pagination } = await api(url);
         
-        // Show member name if filtered, otherwise show firm info
-        if (currentMember) {
+        // Render date tabs for the firm (if not filtering by member)
+        if (!currentMember && byDate && byDate.length > 0) {
+            renderFirmDateTabs(byDate, firm);
+        } else if (currentMember) {
             const member = firmMembers.find(m => m.id === currentMember);
             elements.dateTabs.innerHTML = `<span style="color: var(--text-muted); font-size: 12px;">${firm.name} → @${member?.username || 'member'}</span>`;
-        } else {
-            elements.dateTabs.innerHTML = `<span style="color: var(--text-muted); font-size: 12px;">${firm.name} • ${firm.memberCount || 0} accounts tracked</span>`;
         }
         
         // Update stats
         elements.nfUnreviewedCount.textContent = stats.unreviewed || 0;
-        elements.nfTotalCount.textContent = stats.total || 0;
+        elements.nfTotalCount.textContent = stats.total || stats.count || 0;
         
         // Server now returns only unreviewed items, sorted by follower count
         // Group by followed user (in case same person followed by multiple trackers)
@@ -731,6 +749,34 @@ async function loadFirmNewFollows(firmId) {
         elements.nfEmptyCard.style.display = 'block';
         disableNfActionButtons(true);
     }
+}
+
+// Render date tabs for firm view
+function renderFirmDateTabs(byDate, firm) {
+    // "All" tab first
+    const allUnreviewed = byDate.reduce((sum, d) => sum + (d.unreviewed || 0), 0);
+    const allTab = `<button class="date-tab ${!currentFirmDate ? 'active' : ''}" data-firm-date="">All <span class="tab-count">(${allUnreviewed})</span></button>`;
+    
+    const dateTabs = byDate.map(d => {
+        const isActive = d.date === currentFirmDate;
+        const label = formatDateLabel(d.date);
+        return `
+            <button class="date-tab ${isActive ? 'active' : ''}" data-firm-date="${d.date}">
+                ${label}<span class="tab-count">(${d.unreviewed}/${d.count})</span>
+            </button>
+        `;
+    }).join('');
+    
+    elements.dateTabs.innerHTML = allTab + dateTabs;
+    
+    // Add click handlers
+    elements.dateTabs.querySelectorAll('.date-tab').forEach(tab => {
+        tab.addEventListener('click', () => {
+            const date = tab.dataset.firmDate;
+            currentFirmDate = date || null;
+            selectFirmDate(currentFirmDate);
+        });
+    });
 }
 
 // Load new follows stats and update badge
