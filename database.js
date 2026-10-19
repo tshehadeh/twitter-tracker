@@ -632,7 +632,7 @@ const dbFunctions = {
             JOIN users u ON nf.followed_user_id = u.id
             LEFT JOIN categorizations c ON u.id = c.user_id
             WHERE cn.firm = ? AND nf.reviewed = 0 
-              AND nf.detected_at >= datetime('now', '-3 days')
+              AND nf.detected_at >= datetime('now', '-2 days')
             ORDER BY u.followers_count DESC
             LIMIT ? OFFSET ?
         `).all(firmId, limit, offset);
@@ -645,7 +645,7 @@ const dbFunctions = {
                    SUM(CASE WHEN nf.reviewed = 0 THEN 1 ELSE 0 END) as unreviewed
             FROM new_follows nf
             JOIN core_nodes cn ON nf.core_node_id = cn.id
-            WHERE cn.firm = ? AND nf.detected_at >= datetime('now', '-3 days')
+            WHERE cn.firm = ? AND nf.detected_at >= datetime('now', '-2 days')
         `).get(firmId);
     },
     
@@ -657,7 +657,7 @@ const dbFunctions = {
                    SUM(CASE WHEN nf.reviewed = 0 THEN 1 ELSE 0 END) as unreviewed
             FROM new_follows nf
             JOIN core_nodes cn ON nf.core_node_id = cn.id
-            WHERE cn.firm = ? AND nf.detected_at >= datetime('now', '-3 days')
+            WHERE cn.firm = ? AND nf.detected_at >= datetime('now', '-2 days')
             GROUP BY DATE(nf.detected_at)
             ORDER BY date DESC
         `).all(firmId);
@@ -701,7 +701,7 @@ const dbFunctions = {
             JOIN users u ON nf.followed_user_id = u.id
             LEFT JOIN categorizations c ON u.id = c.user_id
             WHERE nf.core_node_id = ? AND nf.reviewed = 0
-              AND nf.detected_at >= datetime('now', '-3 days')
+              AND nf.detected_at >= datetime('now', '-2 days')
             ORDER BY u.followers_count DESC
             LIMIT ? OFFSET ?
         `).all(coreNodeId, limit, offset);
@@ -713,7 +713,7 @@ const dbFunctions = {
             SELECT COUNT(*) as total,
                    SUM(CASE WHEN reviewed = 0 THEN 1 ELSE 0 END) as unreviewed
             FROM new_follows
-            WHERE core_node_id = ? AND detected_at >= datetime('now', '-3 days')
+            WHERE core_node_id = ? AND detected_at >= datetime('now', '-2 days')
         `).get(coreNodeId);
     },
     
