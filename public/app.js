@@ -988,6 +988,7 @@ async function displayGroupedNewFollow(gf) {
 
 // Display tracked-by panel with core nodes who followed this person
 // If firmId is provided, only show trackers from that firm
+// Uses firmMembers data we already loaded - NO additional API calls
 async function displayTrackedByPanel(usernames, firmId = null) {
     if (!usernames || usernames.length === 0) {
         elements.trackedByCount.textContent = '0';
@@ -995,35 +996,28 @@ async function displayTrackedByPanel(usernames, firmId = null) {
         return;
     }
     
-    // If viewing a firm, filter usernames to only those in the firm
-    let filteredUsernames = usernames;
+    // If viewing a firm, filter to only those in the firm and use firmMembers data
+    let trackers = [];
     if (firmId && firmMembers.length > 0) {
-        const firmUsernames = new Set(firmMembers.map(m => m.username.toLowerCase()));
-        filteredUsernames = usernames.filter(u => firmUsernames.has(u.toLowerCase()));
+        const firmUsernamesLower = new Map(firmMembers.map(m => [m.username.toLowerCase(), m]));
+        for (const u of usernames) {
+            const member = firmUsernamesLower.get(u.toLowerCase());
+            if (member) {
+                trackers.push(member);
+            }
+        }
+    } else {
+        // No firm selected - just show usernames without stats (fast)
+        trackers = usernames.map(u => ({ username: u, track_count: 0, pass_count: 0 }));
     }
     
-    if (filteredUsernames.length === 0) {
+    if (trackers.length === 0) {
         elements.trackedByCount.textContent = '0';
         elements.trackedByList.innerHTML = '<p style="padding: 16px; color: var(--text-muted); font-size: 12px;">No trackers from this firm</p>';
         return;
     }
     
-    elements.trackedByCount.textContent = filteredUsernames.length;
-    elements.trackedByList.innerHTML = '<div style="padding: 16px; text-align: center;"><div class="spinner"></div></div>';
-    
-    // Fetch stats for each core node
-    const trackers = [];
-    for (const username of filteredUsernames) {
-        try {
-            const { coreNode } = await api(`/core-nodes/username/${username}`);
-            if (coreNode) {
-                trackers.push(coreNode);
-            }
-        } catch (error) {
-            // If API fails, just show username without stats
-            trackers.push({ username, track_count: 0, pass_count: 0 });
-        }
-    }
+    elements.trackedByCount.textContent = trackers.length;
     
     // Sort by track rate (higher is better)
     trackers.sort((a, b) => {
