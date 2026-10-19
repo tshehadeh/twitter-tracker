@@ -953,8 +953,8 @@ async function displayGroupedNewFollow(gf) {
         elements.nfCoreNode.innerHTML += ` <span class="category-badge ${gf.existing_category}">(${gf.existing_category})</span>`;
     }
     
-    // Populate the tracked-by panel
-    await displayTrackedByPanel(usernames);
+    // Populate the tracked-by panel (filter to current firm if viewing a firm)
+    await displayTrackedByPanel(usernames, currentFirm);
     
     elements.nfAvatar.src = avatarUrl;
     elements.nfAvatar.onerror = () => {
@@ -987,19 +987,33 @@ async function displayGroupedNewFollow(gf) {
 }
 
 // Display tracked-by panel with core nodes who followed this person
-async function displayTrackedByPanel(usernames) {
+// If firmId is provided, only show trackers from that firm
+async function displayTrackedByPanel(usernames, firmId = null) {
     if (!usernames || usernames.length === 0) {
         elements.trackedByCount.textContent = '0';
         elements.trackedByList.innerHTML = '<p style="padding: 16px; color: var(--text-muted); font-size: 12px;">No trackers</p>';
         return;
     }
     
-    elements.trackedByCount.textContent = usernames.length;
+    // If viewing a firm, filter usernames to only those in the firm
+    let filteredUsernames = usernames;
+    if (firmId && firmMembers.length > 0) {
+        const firmUsernames = new Set(firmMembers.map(m => m.username.toLowerCase()));
+        filteredUsernames = usernames.filter(u => firmUsernames.has(u.toLowerCase()));
+    }
+    
+    if (filteredUsernames.length === 0) {
+        elements.trackedByCount.textContent = '0';
+        elements.trackedByList.innerHTML = '<p style="padding: 16px; color: var(--text-muted); font-size: 12px;">No trackers from this firm</p>';
+        return;
+    }
+    
+    elements.trackedByCount.textContent = filteredUsernames.length;
     elements.trackedByList.innerHTML = '<div style="padding: 16px; text-align: center;"><div class="spinner"></div></div>';
     
     // Fetch stats for each core node
     const trackers = [];
-    for (const username of usernames) {
+    for (const username of filteredUsernames) {
         try {
             const { coreNode } = await api(`/core-nodes/username/${username}`);
             if (coreNode) {

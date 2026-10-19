@@ -974,7 +974,7 @@ body {
     cursor: pointer;
     padding: 0 4px;
     line-height: 1;
-    opacity: 0;
+    opacity: 0.5;
     transition: all 0.1s;
 }
 
@@ -984,6 +984,7 @@ body {
 
 .member-remove:hover {
     color: var(--error);
+    opacity: 1;
 }
 
 /* Sidebar Add Member */
