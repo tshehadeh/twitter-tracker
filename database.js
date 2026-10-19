@@ -649,7 +649,7 @@ const dbFunctions = {
         `).get(firmId);
     },
     
-    // Get new follows by date for a firm (for date tabs) - last 3 days
+    // Get new follows by date for a firm (for date tabs) - show last 7 days of tabs
     getNewFollowsByFirmAndDate(firmId) {
         return db.prepare(`
             SELECT DATE(nf.detected_at) as date,
@@ -657,7 +657,7 @@ const dbFunctions = {
                    SUM(CASE WHEN nf.reviewed = 0 THEN 1 ELSE 0 END) as unreviewed
             FROM new_follows nf
             JOIN core_nodes cn ON nf.core_node_id = cn.id
-            WHERE cn.firm = ? AND nf.detected_at >= datetime('now', '-2 days')
+            WHERE cn.firm = ? AND nf.detected_at >= datetime('now', '-7 days')
             GROUP BY DATE(nf.detected_at)
             ORDER BY date DESC
         `).all(firmId);
