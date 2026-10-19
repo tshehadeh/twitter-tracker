@@ -100,10 +100,15 @@ db.exec(`
     );
 
     CREATE INDEX IF NOT EXISTS idx_core_nodes_twitter_id ON core_nodes(twitter_id);
+    CREATE INDEX IF NOT EXISTS idx_core_nodes_firm ON core_nodes(firm);
     CREATE INDEX IF NOT EXISTS idx_follows_core_node ON follows(core_node_id);
+    CREATE INDEX IF NOT EXISTS idx_follows_followed_user ON follows(followed_user_id);
     CREATE INDEX IF NOT EXISTS idx_follows_active ON follows(is_active);
     CREATE INDEX IF NOT EXISTS idx_new_follows_reviewed ON new_follows(reviewed);
     CREATE INDEX IF NOT EXISTS idx_new_follows_detected ON new_follows(detected_at);
+    CREATE INDEX IF NOT EXISTS idx_new_follows_followed_user ON new_follows(followed_user_id);
+    CREATE INDEX IF NOT EXISTS idx_new_follows_core_node ON new_follows(core_node_id);
+    CREATE INDEX IF NOT EXISTS idx_users_twitter_id ON users(twitter_id);
 `);
 
 // Migration: Add new columns to core_nodes if they don't exist
@@ -610,8 +615,9 @@ const dbFunctions = {
         insertMany(nodes);
     },
     
-    // Get new follows for a specific firm (by firm field)
-    getNewFollowsByFirm(firmId) {
+    // Get new follows for a specific firm (by firm field) - with pagination
+    // Only returns UNREVIEWED items for faster loading
+    getNewFollowsByFirm(firmId, limit = 50, offset = 0) {
         return db.prepare(`
             SELECT nf.*, 
                    cn.username as core_node_username, cn.display_name as core_node_display_name,
@@ -625,13 +631,26 @@ const dbFunctions = {
             JOIN core_nodes cn ON nf.core_node_id = cn.id
             JOIN users u ON nf.followed_user_id = u.id
             LEFT JOIN categorizations c ON u.id = c.user_id
-            WHERE cn.firm = ?
-            ORDER BY nf.detected_at DESC
-        `).all(firmId);
+            WHERE cn.firm = ? AND nf.reviewed = 0
+            ORDER BY u.followers_count DESC
+            LIMIT ? OFFSET ?
+        `).all(firmId, limit, offset);
     },
     
-    // Get new follows for a specific member (core_node_id)
-    getNewFollowsByMember(coreNodeId) {
+    // Get total count of new follows for a firm
+    getNewFollowsByFirmCount(firmId) {
+        return db.prepare(`
+            SELECT COUNT(*) as total,
+                   SUM(CASE WHEN nf.reviewed = 0 THEN 1 ELSE 0 END) as unreviewed
+            FROM new_follows nf
+            JOIN core_nodes cn ON nf.core_node_id = cn.id
+            WHERE cn.firm = ?
+        `).get(firmId);
+    },
+    
+    // Get new follows for a specific member (core_node_id) - with pagination
+    // Only returns UNREVIEWED items for faster loading
+    getNewFollowsByMember(coreNodeId, limit = 50, offset = 0) {
         return db.prepare(`
             SELECT nf.*, 
                    cn.username as core_node_username, cn.display_name as core_node_display_name,
@@ -645,9 +664,20 @@ const dbFunctions = {
             JOIN core_nodes cn ON nf.core_node_id = cn.id
             JOIN users u ON nf.followed_user_id = u.id
             LEFT JOIN categorizations c ON u.id = c.user_id
-            WHERE nf.core_node_id = ?
-            ORDER BY nf.detected_at DESC
-        `).all(coreNodeId);
+            WHERE nf.core_node_id = ? AND nf.reviewed = 0
+            ORDER BY u.followers_count DESC
+            LIMIT ? OFFSET ?
+        `).all(coreNodeId, limit, offset);
+    },
+    
+    // Get count of new follows for a member
+    getNewFollowsByMemberCount(coreNodeId) {
+        return db.prepare(`
+            SELECT COUNT(*) as total,
+                   SUM(CASE WHEN reviewed = 0 THEN 1 ELSE 0 END) as unreviewed
+            FROM new_follows
+            WHERE core_node_id = ?
+        `).get(coreNodeId);
     },
     
     // Get next unreviewed new follow for a firm

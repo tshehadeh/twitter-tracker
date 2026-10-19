@@ -337,10 +337,10 @@ app.delete('/api/firms/:firmId/members/:memberId', (req, res) => {
     }
 });
 
-// API: Get new follows for a specific firm (with optional member filter)
+// API: Get new follows for a specific firm (with optional member filter and pagination)
 app.get('/api/new-follows/firm/:firmId', (req, res) => {
     const { firmId } = req.params;
-    const { member } = req.query; // Optional core_node_id to filter by
+    const { member, limit = 50, offset = 0 } = req.query;
     const firm = FIRMS[firmId];
     
     if (!firm) {
@@ -349,23 +349,30 @@ app.get('/api/new-follows/firm/:firmId', (req, res) => {
     
     try {
         let newFollows;
+        let stats;
+        
         if (member) {
-            // Filter by specific member
-            newFollows = db.getNewFollowsByMember(parseInt(member));
+            // Filter by specific member (still paginated)
+            newFollows = db.getNewFollowsByMember(parseInt(member), parseInt(limit), parseInt(offset));
+            const memberStats = db.getNewFollowsByMemberCount(parseInt(member));
+            stats = memberStats || { total: 0, unreviewed: 0 };
         } else {
-            // Get all for firm
-            newFollows = db.getNewFollowsByFirm(firmId);
+            // Get paginated for firm
+            newFollows = db.getNewFollowsByFirm(firmId, parseInt(limit), parseInt(offset));
+            const firmStats = db.getNewFollowsByFirmCount(firmId);
+            stats = firmStats || { total: 0, unreviewed: 0 };
         }
         
         const members = db.getCoreNodesByFirm(firmId);
-        const stats = { 
-            total: newFollows.length,
-            unreviewed: newFollows.filter(nf => !nf.reviewed).length 
-        };
         res.json({ 
             firm: { id: firmId, ...firm, memberCount: members.length }, 
-            newFollows, 
-            stats 
+            newFollows,
+            stats,
+            pagination: {
+                limit: parseInt(limit),
+                offset: parseInt(offset),
+                hasMore: newFollows.length === parseInt(limit)
+            }
         });
     } catch (error) {
         res.status(500).json({ error: error.message });

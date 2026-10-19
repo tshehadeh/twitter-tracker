@@ -662,12 +662,12 @@ async function addMemberToFirm(username) {
 // Load new follows for a specific firm
 async function loadFirmNewFollows(firmId) {
     try {
-        // Build URL with optional member filter
-        let url = `/new-follows/firm/${firmId}`;
+        // Build URL with optional member filter and pagination
+        let url = `/new-follows/firm/${firmId}?limit=100`;
         if (currentMember) {
-            url += `?member=${currentMember}`;
+            url += `&member=${currentMember}`;
         }
-        const { newFollows, stats, firm } = await api(url);
+        const { newFollows, stats, firm, pagination } = await api(url);
         
         // Show member name if filtered, otherwise show firm info
         if (currentMember) {
@@ -681,9 +681,10 @@ async function loadFirmNewFollows(firmId) {
         elements.nfUnreviewedCount.textContent = stats.unreviewed || 0;
         elements.nfTotalCount.textContent = stats.total || 0;
         
-        // Convert to grouped format (group by followed user)
+        // Server now returns only unreviewed items, sorted by follower count
+        // Group by followed user (in case same person followed by multiple trackers)
         const userMap = new Map();
-        newFollows.forEach(nf => {
+        for (const nf of newFollows) {
             const key = nf.followed_user_db_id;
             if (!userMap.has(key)) {
                 userMap.set(key, {
@@ -698,21 +699,18 @@ async function loadFirmNewFollows(firmId) {
                     verified: nf.followed_verified,
                     existing_category: nf.existing_category,
                     followed_by_usernames: [],
-                    follow_count: 0,
-                    reviewed: nf.reviewed
+                    follow_count: 0
                 });
             }
             const user = userMap.get(key);
-            // Dedupe - only add if not already in list
             if (!user.followed_by_usernames.includes(nf.core_node_username)) {
                 user.followed_by_usernames.push(nf.core_node_username);
                 user.follow_count++;
             }
-        });
+        }
         
-        // Convert to array and sort by follow count
+        // Sort by follow count (most followed first)
         groupedNewFollows = Array.from(userMap.values())
-            .filter(u => !u.reviewed || u.reviewed === 0)
             .sort((a, b) => b.follow_count - a.follow_count);
         currentGroupedIndex = 0;
         
@@ -729,6 +727,9 @@ async function loadFirmNewFollows(firmId) {
         
     } catch (error) {
         console.error('Error loading firm new follows:', error);
+        elements.nfLoadingCard.style.display = 'none';
+        elements.nfEmptyCard.style.display = 'block';
+        disableNfActionButtons(true);
     }
 }
 
