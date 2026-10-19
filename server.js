@@ -390,11 +390,7 @@ app.get('/api/new-follows/firm/:firmId/next', (req, res) => {
     
     try {
         const newFollow = db.getNextNewFollowByFirm(firmId);
-        const allForFirm = db.getNewFollowsByFirm(firmId);
-        const stats = { 
-            total: allForFirm.length,
-            unreviewed: allForFirm.filter(nf => !nf.reviewed).length 
-        };
+        const stats = db.getNewFollowsByFirmCount(firmId) || { total: 0, unreviewed: 0 };
         
         if (!newFollow) {
             return res.json({ 
